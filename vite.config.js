@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-    base: './',  // <--- C'est la clé du GPS !
+    base: './',  // <--- CETTE LIGNE EST OBLIGATOIRE POUR ANDROID/CHROME
     })
