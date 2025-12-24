@@ -1,16 +1,27 @@
 // src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { calculateTimeline, addDays } from './utils/logic';
-import './App.css'; // Assure-toi d'avoir un fichier CSS basique
+import { calculateTimeline } from './utils/logic';
+import './App.css'; // Assure-toi que ce fichier existe, même vide
 
 function App() {
-  // CONFIGURATION INITIALE
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  // --- ÉTAT (STATE) ---
   
-  // Ici on définit tes "Blocs" flexibles. 
-  // Tu peux en ajouter autant que tu veux pour simuler l'année.
+  // 1. Date de départ (Reprise du travail)
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // 2. Liste des Jours Fériés (Gérée manuellement)
+  const [holidays, setHolidays] = useState([
+    { id: 1, name: "Aïd el-Fitr (Est.)", date: "2026-03-20" }, // Exemple par défaut
+    { id: 2, name: "Aïd al-Adha (Est.)", date: "2026-05-27" }
+  ]);
+  
+  // États temporaires pour le formulaire d'ajout de fête
+  const [newHolidayName, setNewHolidayName] = useState("");
+  const [newHolidayDate, setNewHolidayDate] = useState("");
+
+  // 3. Les Blocs de Rotation (Squelette initial)
   const [blocks, setBlocks] = useState([
-    { id: 1, type: 'TRAVAIL', duration: 50, label: 'Rotation 1' },
+    { id: 1, type: 'TRAVAIL', duration: 45, label: 'Rotation 1' },
     { id: 2, type: 'PERMISSION', duration: 15, label: 'Repos 1' },
     { id: 3, type: 'TRAVAIL', duration: 50, label: 'Rotation 2' },
     { id: 4, type: 'PERMISSION', duration: 15, label: 'Repos 2' },
@@ -20,80 +31,168 @@ function App() {
 
   const [timeline, setTimeline] = useState([]);
 
-  // Recalculer la timeline à chaque changement
-  useEffect(() => {
-    const computed = calculateTimeline(startDate, blocks);
-    setTimeline(computed);
-  }, [startDate, blocks]);
+  // --- LOGIQUE ---
 
-  // Fonction pour changer la durée d'un bloc spécifique
+  // Recalculer la timeline à chaque changement (date, blocs ou fêtes)
+  useEffect(() => {
+    const computed = calculateTimeline(startDate, blocks, holidays);
+    setTimeline(computed);
+  }, [startDate, blocks, holidays]);
+
+  // Gestion des BLOCS
   const updateDuration = (id, newDuration) => {
     setBlocks(blocks.map(b => 
-      b.id === id ? { ...b, duration: parseInt(newDuration) } : b
+      b.id === id ? { ...b, duration: parseInt(newDuration) || 0 } : b
     ));
   };
 
+  const addNewCycle = () => {
+    const lastIndex = blocks.length - 1; 
+    const newId = Math.max(...blocks.map(b => b.id), 0) + 1;
+    const newCycle = [
+      { id: newId, type: 'TRAVAIL', duration: 45, label: 'Extra Work' },
+      { id: newId + 1, type: 'PERMISSION', duration: 15, label: 'Extra Repos' }
+    ];
+    // Insérer avant le Grand Congé (dernier élément)
+    const newBlocks = [...blocks.slice(0, lastIndex), ...newCycle, blocks[lastIndex]];
+    setBlocks(newBlocks);
+  };
+
+  const removeBlock = (id) => {
+    // Empêcher la suppression du bloc "Conge Annuel" pour garder la structure
+    const block = blocks.find(b => b.id === id);
+    if (block && block.type === 'CONGE_ANNUEL') {
+      alert("Impossible de supprimer le Grand Congé final.");
+      return;
+    }
+    setBlocks(blocks.filter(b => b.id !== id));
+  };
+
+  // Gestion des FÊTES
+  const addHoliday = () => {
+    if (!newHolidayName || !newHolidayDate) return;
+    setHolidays([...holidays, { id: Date.now(), name: newHolidayName, date: newHolidayDate }]);
+    setNewHolidayName("");
+    setNewHolidayDate("");
+  };
+
+  const removeHoliday = (id) => {
+    setHolidays(holidays.filter(h => h.id !== id));
+  };
+
+  // --- RENDU (UI) ---
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <h1>Planificateur de Rotation</h1>
-      
-      {/* Date de départ globale */}
-      <div style={{ marginBottom: '20px', padding: '15px', background: '#f0f0f0', borderRadius: '8px' }}>
-        <label><strong>Date de Reprise (Start):</strong> </label>
-        <input 
-          type="date" 
-          value={startDate} 
-          onChange={(e) => setStartDate(e.target.value)} 
-        />
+
+      {/* SECTION 1: CONFIGURATION (Dates & Fêtes) */}
+      <div style={{ background: '#f8f9fa', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
+        <h3>1. Configuration</h3>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label><strong>Date de Reprise (Start):</strong> </label>
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)} 
+            style={{ marginLeft: '10px', padding: '5px' }}
+          />
+        </div>
+
+        <div style={{ borderTop: '1px solid #ccc', paddingTop: '10px' }}>
+          <strong>Jours Fériés & Événements Clés :</strong>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {holidays.map(h => (
+              <li key={h.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', background: '#fff', padding: '5px', border: '1px solid #eee' }}>
+                <span>📅 {h.date} - <strong>{h.name}</strong></span>
+                <button onClick={() => removeHoliday(h.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✖</button>
+              </li>
+            ))}
+          </ul>
+          
+          <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+            <input 
+              type="text" 
+              placeholder="Nom (ex: Anniversaire)" 
+              value={newHolidayName}
+              onChange={(e) => setNewHolidayName(e.target.value)}
+              style={{ flex: 1, padding: '5px' }}
+            />
+            <input 
+              type="date" 
+              value={newHolidayDate}
+              onChange={(e) => setNewHolidayDate(e.target.value)}
+              style={{ padding: '5px' }}
+            />
+            <button onClick={addHoliday} style={{ padding: '5px 15px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' }}>Ajouter</button>
+          </div>
+        </div>
       </div>
 
-      {/* La Timeline */}
+      {/* SECTION 2: ACTIONS */}
+      <div style={{ marginBottom: '20px' }}>
+         <button 
+          onClick={addNewCycle}
+          style={{ width: '100%', padding: '10px', background: '#e3f2fd', color: '#0d47a1', border: '1px dashed #0d47a1', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          + Insérer une Rotation Imprévue
+        </button>
+      </div>
+
+      {/* SECTION 3: TIMELINE (Visualisation) */}
       <div className="timeline">
-        {timeline.map((item, index) => (
+        {timeline.map((item) => (
           <div key={item.id} style={{ 
-            borderLeft: `5px solid ${item.type === 'TRAVAIL' ? '#ff4444' : '#4caf50'}`,
-            marginBottom: '15px', padding: '10px', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+            borderLeft: `6px solid ${item.type === 'TRAVAIL' ? '#d32f2f' : item.type === 'CONGE_ANNUEL' ? '#fbc02d' : '#388e3c'}`,
+            marginBottom: '15px', padding: '15px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '4px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong>{item.type} ({item.label})</strong>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div>
+                <strong style={{ fontSize: '1.1em', color: '#333' }}>{item.type}</strong>
+                <span style={{ color: '#666', marginLeft: '10px', fontSize: '0.9em' }}>({item.label})</span>
+              </div>
               
-              {/* Le Slider Magique */}
+              {/* Controls */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input 
                   type="number" 
                   value={item.duration} 
                   onChange={(e) => updateDuration(item.id, e.target.value)}
-                  style={{ width: '50px', padding: '5px' }}
+                  style={{ width: '60px', padding: '5px', textAlign: 'center', fontWeight: 'bold' }}
                 />
-                <span>jours</span>
+                <span style={{ fontSize: '0.9em' }}>jours</span>
+                {item.type !== 'CONGE_ANNUEL' && (
+                  <button onClick={() => removeBlock(item.id)} style={{ marginLeft: '5px', color: '#999', background: 'none', border: 'none', cursor: 'pointer' }} title="Supprimer ce bloc">🗑️</button>
+                )}
               </div>
             </div>
 
-            <div style={{ marginTop: '10px', color: '#555' }}>
-              {item.computedStart} ➝ <strong>{item.computedEnd}</strong>
+            <div style={{ background: '#eee', padding: '5px 10px', borderRadius: '4px', display: 'inline-block', fontSize: '0.9em' }}>
+              {item.computedStart}  ➜  <strong>{item.computedEnd}</strong>
             </div>
 
-            {/* Avertissement Collisions Aïd */}
+            {/* ALERTES COLLISIONS */}
             {item.conflicts.length > 0 && (
               <div style={{ 
-                marginTop: '10px', 
-                padding: '8px', 
+                marginTop: '12px', 
+                padding: '10px', 
                 backgroundColor: item.type === 'TRAVAIL' ? '#ffebee' : '#e8f5e9',
+                border: `1px solid ${item.type === 'TRAVAIL' ? '#ef9a9a' : '#a5d6a7'}`,
                 color: item.type === 'TRAVAIL' ? '#c62828' : '#2e7d32',
-                borderRadius: '4px',
-                fontWeight: 'bold'
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                display: 'flex', alignItems: 'center', gap: '10px'
               }}>
-                {item.type === 'TRAVAIL' ? '⚠️ DANGER: ' : '✅ SUCCÈS: '}
-                Tu seras ici pour : {item.conflicts.map(c => c.name).join(', ')}
+                <span style={{ fontSize: '1.5em' }}>{item.type === 'TRAVAIL' ? '⚠️' : '🎉'}</span>
+                <div>
+                  <div>{item.type === 'TRAVAIL' ? 'ATTENTION : Tu travailles pendant :' : 'SUPER : Tu es libre pour :'}</div>
+                  <div style={{ marginTop: '2px' }}>{item.conflicts.map(c => c.name).join(', ')}</div>
+                </div>
               </div>
             )}
           </div>
         ))}
       </div>
-      
-      <button onClick={() => alert("Sauvegardé (Simulation)")} style={{ width: '100%', padding: '15px', background: '#007bff', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px' }}>
-        Sauvegarder ce Scénario
-      </button>
     </div>
   );
 }
