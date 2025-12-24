@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-    base: './',  // <--- CETTE LIGNE EST OBLIGATOIRE POUR ANDROID/CHROME
+    base: './',  // <--- C'EST LA CLÉ POUR L'ÉCRAN BLANC
     })
