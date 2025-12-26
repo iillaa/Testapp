@@ -1,125 +1,211 @@
 /* src/App.css */
 :root {
-  color-scheme: light; /* OBLIGATOIRE : Force le mode clair sur Android */
+  color-scheme: light; /* Force le mode clair */
+
+  /* Palette Néobrutalisme */
+  --bg-color: #f3f4f6;
+  --text-main: #000000;
   
-  --primary: #2563eb;
-  --bg: #f1f5f9;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
+  --border-thick: 3px solid #000000;
+  --shadow-hard: 5px 5px 0px #000000;
   
-  /* Couleurs des blocs */
-  --travail-bg: #eff6ff;
-  --travail-border: #3b82f6;
-  --repos-bg: #f0fdf4;
-  --repos-border: #22c55e;
-  --conge-bg: #fff7ed;
-  --conge-border: #f59e0b;
+  /* Couleurs Cartes */
+  --card-param-bg: #ddd6fe; /* Violet Pastel pour les Paramètres */
+  --card-bg: #ffffff;
+
+  /* Couleurs Statuts */
+  --primary: #8b5cf6;  /* Violet */
+  --secondary: #facc15; /* Jaune (Bouton Congé) */
+  --success: #4ade80;   /* Vert (Bouton Fête) */
+  --danger: #ef4444;   /* Rouge */
+  
+  /* Timeline */
+  --work-bg: #bfdbfe;
+  --rest-bg: #bbf7d0;
+  --conge-bg: #fed7aa;
+  
+  /* Read Only */
+  --readonly-bg: #e5e7eb; /* Gris */
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background-color: var(--bg);
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  background-color: var(--bg-color);
   color: var(--text-main);
-  font-family: system-ui, -apple-system, sans-serif;
+  padding-bottom: 120px; /* Espace pour les gros boutons du bas */
 }
 
 .container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 15px;
   max-width: 600px;
   margin: 0 auto;
-  padding: 15px;
-  min-height: 100vh;
 }
 
-h2, h3 { text-align: center; color: var(--text-main); margin-top: 0; }
-
-/* Cartes */
-.card {
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
-}
-
-/* Inputs */
-input {
-  padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 16px; /* Évite le zoom auto sur mobile */
-  background: white;
-  color: var(--text-main);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.date-row {
-  display: flex;
-  gap: 10px;
+/* CARTE PARAMÈTRES (Colorée) */
+.card-params {
+  background: var(--card-param-bg); /* Couleur ajoutée ici */
+  border: var(--border-thick);
+  box-shadow: var(--shadow-hard);
+  padding: 20px;
   margin-bottom: 10px;
 }
-.date-group { flex: 1; }
-.date-group label { display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: bold; }
 
-/* Timeline Items */
+h2 {
+  margin: 0 0 15px 0;
+  font-weight: 900;
+  text-transform: uppercase;
+  border-bottom: 3px solid #000;
+  padding-bottom: 5px;
+  font-size: 1.4rem;
+}
+
+label { 
+  font-weight: 900; 
+  font-size: 0.75rem; 
+  text-transform: uppercase; 
+  margin-bottom: 5px; 
+  display: block; 
+}
+
+/* INPUTS */
+input, select {
+  width: 100%; padding: 12px;
+  border: var(--border-thick);
+  background: #fff;
+  font-weight: bold; font-size: 1rem;
+  margin-bottom: 15px;
+  border-radius: 0;
+  color: black;
+}
+input:focus, select:focus {
+  background: #fffbeb; outline: none; box-shadow: 3px 3px 0 #000;
+}
+
+/* INPUT LECTURE SEULE (Grisé) */
+input:disabled {
+  background-color: var(--readonly-bg);
+  color: #6b7280;
+  cursor: not-allowed;
+  border-color: #6b7280; /* Bordure grise aussi */
+}
+
+/* TIMELINE ITEMS */
 .timeline-item {
-  background: white;
-  border-radius: 10px;
+  border: var(--border-thick);
   padding: 15px;
   margin-bottom: 15px;
-  border-left: 5px solid #ccc;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.timeline-item.travail { background: var(--travail-bg); border-color: var(--travail-border); }
-.timeline-item.permission { background: var(--repos-bg); border-color: var(--repos-border); }
-.timeline-item.conge_annuel { background: var(--conge-bg); border-color: var(--conge-border); }
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.item-title { font-weight: bold; font-size: 1.1rem; }
-
-/* Édition Dates Intelligente */
-.smart-dates {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-}
-.duration-wrapper {
+  box-shadow: var(--shadow-hard);
+  background: white;
   position: relative;
-  width: 70px;
 }
-.duration-wrapper span {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-.duration-wrapper input { text-align: center; padding-right: 20px; }
+.timeline-item.travail { background: var(--work-bg); }
+.timeline-item.permission { background: var(--rest-bg); }
+.timeline-item.conge_annuel { background: var(--conge-bg); }
 
-/* Boutons */
-button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
-button:active { transform: scale(0.98); }
+.item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+.item-title { font-weight: 900; font-size: 1.1rem; }
 
-.btn-add {
-  width: 100%; padding: 15px;
-  background: var(--primary); color: white;
-  font-size: 1rem;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-}
+/* Smart Dates Grid */
+.smart-dates { display: grid; grid-template-columns: 1fr 1fr 70px; gap: 10px; }
+.smart-dates input { margin-bottom: 0; }
+.duration-input { text-align: center; background: rgba(255,255,255,0.5); }
 
-.btn-delete { background: none; font-size: 1.2rem; padding: 0 5px; }
-
+/* ALERTES */
 .alert {
-  margin-top: 10px; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.9rem;
-  border: 1px solid transparent;
+  margin-top: 10px; padding: 10px; border: 2px solid black; font-weight: 800; font-size: 0.85rem;
+  background: white; display: flex; align-items: center; gap: 10px;
 }
-.alert.danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-.alert.success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+
+/* BOUTONS */
+button {
+  border: var(--border-thick);
+  font-weight: 900; text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: all 0.1s;
+}
+button:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0 #000; }
+
+.btn-delete { background: #ef4444; color: white; padding: 5px 10px; }
+
+/* Zone Ajout Fête (Alignement) */
+.add-holiday-row { display: flex; gap: 5px; align-items: center; }
+.btn-add-holiday { 
+  background: var(--success); color: black; 
+  padding: 12px; width: 50px; font-size: 1.5rem; 
+  display: flex; justify-content: center; align-items: center;
+}
+
+/* Backup Zone */
+.backup-zone { display: flex; gap: 10px; margin-top: 10px; border-top: 3px solid black; padding-top: 15px; }
+.btn-backup { flex: 1; padding: 12px; background: #374151; color: white; }
+.btn-restore { 
+  flex: 1; padding: 12px; background: #d1d5db; color: black; 
+  border: 3px solid black; box-shadow: 5px 5px 0 black; 
+  text-align: center; font-weight: 900; display: block;
+}
+
+/* FAB (Boutons du bas) */
+.fab-container {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; width: 95%; max-width: 580px; z-index: 100;
+}
+.btn-fab {
+  flex: 1; padding: 18px; font-size: 1rem; border-radius: 0; 
+  box-shadow: 6px 6px 0px black; border: 3px solid black;
+}
+.btn-add-rot { background: var(--primary); color: white; }
+.btn-add-conge { background: var(--secondary); color: black; }
+/* ... (Garde tout le CSS précédent) ... */
+
+/* HEADER (Titre App) */
+.app-header {
+  text-align: center;
+  margin-bottom: 10px;
+  padding: 15px;
+  background: var(--secondary); /* Jaune */
+  border: var(--border-thick);
+  box-shadow: var(--shadow-hard);
+}
+.app-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+}
+.app-version {
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: black;
+  color: white;
+  padding: 2px 6px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+/* FOOTER (Crédits) */
+.app-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding: 15px;
+  border-top: var(--border-thick);
+  background: #e5e7eb;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #374151;
+}
+.dev-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: black;
+  margin-top: 5px;
+}

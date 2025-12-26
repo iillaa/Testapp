@@ -1,268 +1,230 @@
 // src/App.jsx
-import React, { useState, useMemo } from 'react'; // Retrait de useEffect, Ajout de useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { calculateTimeline } from './utils/logic';
 import './App.css';
 
 function App() {
-  // --- 1. CONFIGURATION ---
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const loadState = (key, def) => {
+    try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
+  };
+
+  const [startDate, setStartDate] = useState(() => loadState('startDate', new Date().toISOString().split('T')[0]));
+  const [refYear, setRefYear] = useState(() => loadState('refYear', new Date().getFullYear() + 1));
+  const [targetWaveDate, setTargetWaveDate] = useState(() => loadState('targetWaveDate', ""));
   
-  // Vagues & Cible Congé
-  const [refYear, setRefYear] = useState(new Date().getFullYear() + 1); 
-  const [targetWaveDate, setTargetWaveDate] = useState(""); 
-  
-  const [holidays, setHolidays] = useState([
+  const [holidays, setHolidays] = useState(() => loadState('holidays', [
     { id: 1, name: "Aïd el-Fitr", date: "2026-03-20" },
     { id: 2, name: "Aïd al-Adha", date: "2026-05-27" }
-  ]);
-  const [newHolidayName, setNewHolidayName] = useState("");
-  const [newHolidayDate, setNewHolidayDate] = useState("");
-
-  // BLOCS DE BASE
-  const [blocks, setBlocks] = useState([
+  ]));
+  
+  const [blocks, setBlocks] = useState(() => loadState('blocks', [
     { id: 1, type: 'TRAVAIL', duration: 45 },
     { id: 2, type: 'PERMISSION', duration: 15 },
     { id: 3, type: 'TRAVAIL', duration: 45 },
-    { id: 4, type: 'PERMISSION', duration: 15 },
-  ]);
+  ]));
 
-  // --- 2. LOGIQUE DES VAGUES ---
+  const [newHolidayName, setNewHolidayName] = useState("");
+  const [newHolidayDate, setNewHolidayDate] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem('startDate', JSON.stringify(startDate));
+    localStorage.setItem('refYear', JSON.stringify(refYear));
+    localStorage.setItem('targetWaveDate', JSON.stringify(targetWaveDate));
+    localStorage.setItem('holidays', JSON.stringify(holidays));
+    localStorage.setItem('blocks', JSON.stringify(blocks));
+  }, [startDate, refYear, targetWaveDate, holidays, blocks]);
+
   const waves = useMemo(() => {
     const list = [];
     const startSeason = new Date(`${refYear}-06-01`);
     for (let i = 0; i < 6; i++) { 
-      const waveDate = new Date(startSeason);
-      waveDate.setDate(startSeason.getDate() + (i * 50)); 
-      list.push({
-        id: i + 1,
-        label: `Vague ${i + 1}`,
-        date: waveDate.toISOString().split('T')[0]
-      });
+      const d = new Date(startSeason); d.setDate(startSeason.getDate() + (i * 50)); 
+      list.push({ id: i + 1, label: `Vague ${i + 1}`, date: d.toISOString().split('T')[0] });
     }
     return list;
   }, [refYear]);
 
-  // Initialisation intelligente de la vague cible
-  useMemo(() => {
-    if (!targetWaveDate && waves.length > 0) {
-      setTargetWaveDate(waves[0].date);
-    }
+  useEffect(() => {
+    if (!targetWaveDate && waves.length > 0) setTargetWaveDate(waves[0].date);
   }, [waves, targetWaveDate]);
 
-  // --- 3. MOTEUR (CORRECTION DU CRASH ICI) ---
-  // On utilise useMemo au lieu de useState+useEffect pour la timeline.
-  // Cela garantit que timeline est TOUJOURS synchro avec blocks.
-  const timeline = useMemo(() => {
-    return calculateTimeline(startDate, blocks, holidays);
-  }, [startDate, blocks, holidays]);
+  const timeline = useMemo(() => calculateTimeline(startDate, blocks, holidays), [startDate, blocks, holidays]);
 
-  // --- 4. FONCTIONS INTELLIGENTES ---
-
-  // A. Nom Dynamique (Sécurisé)
-  const getDynamicLabel = (index, type) => {
-    // Sécurité anti-crash si l'index est hors limite (juste au cas où)
-    if (!blocks[index]) return "...";
-
-    let workCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (blocks[i] && blocks[i].type === 'TRAVAIL') workCount++;
-    }
-    if (type === 'CONGE_ANNUEL') return 'Grand Congé';
-    if (type === 'TRAVAIL') return `Rotation ${workCount}`;
-    return `Repos ${workCount}`;
+  const getDynamicLabel = (idx, type) => {
+    if (!blocks[idx]) return "...";
+    let count = 0;
+    for (let i = 0; i <= idx; i++) if (blocks[i].type === 'TRAVAIL') count++;
+    return type === 'CONGE_ANNUEL' ? 'Grand Congé' : type === 'TRAVAIL' ? `Rotation ${count}` : `Repos ${count}`;
   };
 
-  // B. Détecteur d'Erreur
-  const getSequenceError = (index, currentType) => {
-    if (index === 0) return null; 
-    // Sécurité : on vérifie que le bloc précédent existe
-    const prevBlock = blocks[index - 1];
-    if (!prevBlock) return null;
-
-    const prevType = prevBlock.type;
-    if (currentType === 'TRAVAIL' && prevType === 'TRAVAIL') return "⛔ ERREUR : 2 Rotations de suite !";
-    if (currentType === 'PERMISSION' && prevType === 'PERMISSION') return "⛔ ERREUR : 2 Repos de suite !";
+  const getSeqError = (idx, type) => {
+    if (idx === 0 || !blocks[idx-1]) return null;
+    const prev = blocks[idx-1].type;
+    if (type === 'TRAVAIL' && prev === 'TRAVAIL') return "⚠️ 2 ROTATIONS SUITE";
+    if (type === 'PERMISSION' && prev === 'PERMISSION') return "⚠️ 2 REPOS SUITE";
     return null;
   };
 
-  // C. Position Aïd
-  const getHolidayPosition = (holidayDateStr, startStr, endStr) => {
-    const hDate = new Date(holidayDateStr);
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-    const totalDuration = end - start;
-    const elapsed = hDate - start;
-    const ratio = elapsed / totalDuration;
-    if (ratio < 0.33) return "au DÉBUT";
-    if (ratio > 0.66) return "à la FIN";
-    return "au MILIEU";
+  const getPos = (h, s, e) => {
+    const r = (new Date(h)-new Date(s))/(new Date(e)-new Date(s));
+    return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
   };
 
-  // --- 5. ACTIONS ---
-  const updateDuration = (id, val) => {
-    setBlocks(blocks.map(b => b.id === id ? { ...b, duration: parseInt(val) || 0 } : b));
+  const updateDur = (id, val) => setBlocks(blocks.map(b => b.id === id ? { ...b, duration: +val || 0 } : b));
+  const updateEnd = (id, end, start) => {
+    const diff = Math.round((new Date(end) - new Date(start)) / 86400000);
+    if (diff >= 0) updateDur(id, diff); else alert("Date invalide");
   };
-
-  const updateEndDate = (id, newEndDate, computedStart) => {
-    const start = new Date(computedStart);
-    const end = new Date(newEndDate);
-    const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
-    if (diffDays >= 0) updateDuration(id, diffDays);
-    else alert("Fin avant début impossible !");
-  };
-
-  const addStandardCycle = () => {
-    const newId = Date.now();
-    const newCycle = [
-      { id: newId, type: 'TRAVAIL', duration: 45 },
-      { id: newId + 1, type: 'PERMISSION', duration: 15 }
-    ];
-    setBlocks([...blocks, ...newCycle]);
-  };
-
-  const addCongeBlock = () => {
-    const newId = Date.now();
-    setBlocks([...blocks, { id: newId, type: 'CONGE_ANNUEL', duration: 50 }]);
-  };
-
-  const removeBlock = (id) => setBlocks(blocks.filter(b => b.id !== id));
-
-  const addHoliday = () => {
-    if (!newHolidayName || !newHolidayDate) return;
-    setHolidays([...holidays, { id: Date.now(), name: newHolidayName, date: newHolidayDate }]);
+  const addStd = () => setBlocks([...blocks, {id: Date.now(), type:'TRAVAIL', duration:45}, {id: Date.now()+1, type:'PERMISSION', duration:15}]);
+  const addConge = () => setBlocks([...blocks, {id: Date.now(), type:'CONGE_ANNUEL', duration:50}]);
+  const remove = (id) => setBlocks(blocks.filter(b => b.id !== id));
+  
+  const addHoli = () => {
+    if(!newHolidayName || !newHolidayDate) return;
+    setHolidays([...holidays, {id:Date.now(), name:newHolidayName, date:newHolidayDate}]);
     setNewHolidayName(""); setNewHolidayDate("");
   };
 
-  const getGapMessage = (computedStart) => {
-    if (!targetWaveDate) return null;
-    const arrival = new Date(computedStart);
-    const target = new Date(targetWaveDate);
-    const diff = Math.ceil((arrival - target) / (1000 * 60 * 60 * 24));
-
-    if (diff === 0) return { text: "✅ SYNCHRO : Tu sors pile avec ta vague.", color: "#166534", bg: "#dcfce7" };
-    if (diff > 0) return { text: `⚠️ RETARD : Tu as ${diff} jours de trop.`, color: "#9a3412", bg: "#ffedd5" };
-    return { text: `ℹ️ AVANCE : Tu finis ${Math.abs(diff)} jours AVANT la vague.`, color: "#1e40af", bg: "#eff6ff" };
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify({startDate, refYear, targetWaveDate, holidays, blocks},null,2)], {type:"application/json"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
   };
-
-  const checkPermissionRule = (item) => {
-    if (item.type !== 'PERMISSION') return null;
-    if (!targetWaveDate) return null;
-    const permStart = new Date(item.computedStart);
-    const waveStart = new Date(targetWaveDate);
-    const diff = Math.abs((permStart - waveStart) / (1000 * 60 * 60 * 24));
-    if (diff < 30) return "⛔ RÈGLE : Tu es dans la zone de ta Vague !";
-    return null;
+  const importData = (e) => {
+    const r = new FileReader();
+    r.onload = (ev) => {
+      try {
+        const d = JSON.parse(ev.target.result);
+        if(d.blocks) setBlocks(d.blocks);
+        if(d.startDate) setStartDate(d.startDate);
+        if(d.holidays) setHolidays(d.holidays);
+        if(d.refYear) setRefYear(d.refYear);
+        if(d.targetWaveDate) setTargetWaveDate(d.targetWaveDate);
+        alert("Restauré !");
+      } catch { alert("Erreur fichier"); }
+    };
+    if(e.target.files[0]) r.readAsText(e.target.files[0]);
   };
 
   return (
     <div className="container">
-      <h2>📅 Planning Permissions</h2>
-
-      <div className="card">
-        <div className="date-row">
-          <div className="date-group">
-            <label>Date de Reprise</label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+      
+      {/* HEADER : NOM DE L'APP */}
+      <header className="app-header">
+        <h1 className="app-title">PermiPlan <span className="app-version">v1.0</span></h1>
+      </header>
+      
+      {/* 1. CONFIGURATION */}
+      <section className="card-params">
+        <h2>Paramètres</h2>
+        <label>Reprise Travail</label>
+        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        
+        <div style={{display:'flex', gap:'10px'}}>
+          <div style={{flex:1}}>
+            <label>Année</label>
+            <select value={refYear} onChange={e => setRefYear(+e.target.value)}>
+              {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
-          <div className="date-group">
-            <label>Année de Congé</label>
-            <select value={refYear} onChange={e => setRefYear(parseInt(e.target.value))} style={{width:'100%', padding:'8px'}}>
-              <option value={2025}>2025</option>
-              <option value={2026}>2026</option>
-              <option value={2027}>2027</option>
+          <div style={{flex:1}}>
+            <label>Vague</label>
+            <select value={targetWaveDate} onChange={e => setTargetWaveDate(e.target.value)}>
+              {waves.map(w => <option key={w.id} value={w.date}>{w.label}</option>)}
             </select>
           </div>
         </div>
 
-        <div style={{background:'#f8fafc', padding:'10px', borderRadius:'8px', border:'1px solid #e2e8f0', marginBottom:'10px'}}>
-          <label style={{fontWeight:'bold', fontSize:'0.9rem', color:'#475569'}}>🎯 VAGUE DE CONGÉ VISÉE :</label>
-          <select value={targetWaveDate} onChange={e => setTargetWaveDate(e.target.value)} style={{width:'100%', padding:'10px', marginTop:'5px', fontWeight:'bold'}}>
-            {waves.map(w => <option key={w.id} value={w.date}>{w.label} - Début le {w.date}</option>)}
-          </select>
-        </div>
-
-        <details>
-          <summary style={{fontWeight:'bold', color:'gray', cursor:'pointer'}}>Gérer les Fêtes</summary>
-          <ul style={{paddingLeft:'20px', margin:'10px 0'}}>
+        <div style={{borderTop:'3px solid black', paddingTop:'15px'}}>
+          <label>Fêtes ({holidays.length})</label>
+          <ul style={{padding:0, listStyle:'none', maxHeight:'120px', overflowY:'auto'}}>
             {holidays.map(h => (
-              <li key={h.id}>{h.date} : {h.name} <span onClick={() => setHolidays(holidays.filter(x => x.id !== h.id))} style={{color:'red', cursor:'pointer'}}>✖</span></li>
+              <li key={h.id} style={{display:'flex', justifyContent:'space-between', fontWeight:'bold', marginBottom:'8px', borderBottom:'1px dashed black'}}>
+                <span>{h.name} ({h.date})</span>
+                <span onClick={() => setHolidays(holidays.filter(x => x.id !== h.id))} style={{color:'red', cursor:'pointer'}}>✖</span>
+              </li>
             ))}
           </ul>
-          <div style={{display:'flex', gap:'5px'}}>
-            <input placeholder="Nom" value={newHolidayName} onChange={e=>setNewHolidayName(e.target.value)} />
-            <input type="date" value={newHolidayDate} onChange={e=>setNewHolidayDate(e.target.value)} />
-            <button onClick={addHoliday} style={{background:'#22c55e', color:'white', padding:'0 15px'}}>OK</button>
+          
+          <div className="add-holiday-row">
+            <input placeholder="Nom Fête" value={newHolidayName} onChange={e=>setNewHolidayName(e.target.value)} style={{flex:2, marginBottom:0}} />
+            <input type="date" value={newHolidayDate} onChange={e=>setNewHolidayDate(e.target.value)} style={{flex:1.5, marginBottom:0}} />
+            <button className="btn-add-holiday" onClick={addHoli}>+</button>
           </div>
-        </details>
-      </div>
+        </div>
 
-      <div>
+        <div className="backup-zone">
+          <button className="btn-backup" onClick={exportData}>💾 SAUVEGARDER</button>
+          <label className="btn-restore">
+            📂 RESTAURER
+            <input type="file" accept=".json" onChange={importData} style={{display:'none'}} />
+          </label>
+        </div>
+      </section>
+
+      {/* 2. TIMELINE */}
+      <section>
         {timeline.map((item, index) => {
-          const dynamicLabel = getDynamicLabel(index, item.type);
-          const sequenceError = getSequenceError(index, item.type);
-          const isConge = item.type === 'CONGE_ANNUEL';
-          const gapInfo = isConge ? getGapMessage(item.computedStart) : null;
-          const permRuleWarning = checkPermissionRule(item);
+          const label = getDynamicLabel(index, item.type);
+          const err = getSeqError(index, item.type);
+          
+          let gapMsg = null;
+          if (item.type === 'CONGE_ANNUEL' && targetWaveDate) {
+            const diff = Math.ceil((new Date(item.computedStart) - new Date(targetWaveDate)) / 86400000);
+            gapMsg = diff === 0 ? "✅ SYNCHRO PARFAITE" : diff > 0 ? `⚠️ RETARD ${diff} J` : `ℹ️ AVANCE ${Math.abs(diff)} J`;
+          }
+
+          let permWarn = null;
+          if (item.type === 'PERMISSION' && targetWaveDate) {
+             if (Math.abs((new Date(item.computedStart) - new Date(targetWaveDate)) / 86400000) < 30) permWarn = "⛔ ZONE VAGUE !";
+          }
 
           return (
             <div key={item.id} className={`timeline-item ${item.type.toLowerCase()}`}>
               <div className="item-header">
-                <span className="item-title">{isConge ? '🏖️' : item.type === 'TRAVAIL' ? '🏭' : '🏠'} {dynamicLabel}</span>
-                <button className="btn-delete" onClick={() => removeBlock(item.id)}>🗑️</button>
+                <span className="item-title">{item.type === 'TRAVAIL' ? '🏭' : item.type === 'CONGE_ANNUEL' ? '🏖️' : '🏠'} {label}</span>
+                <button className="btn-delete" onClick={() => remove(item.id)}>X</button>
               </div>
 
-              {sequenceError && (
-                <div style={{padding: '10px', borderRadius: '6px', fontWeight: 'bold', textAlign: 'center', marginBottom:'10px', background: '#7f1d1d', color: '#ffffff', border: '2px solid red'}}>
-                  {sequenceError}
-                </div>
-              )}
-
-              {isConge && gapInfo && (
-                <div style={{padding: '10px', borderRadius: '6px', fontWeight: 'bold', textAlign: 'center', marginBottom:'10px', background: gapInfo.bg, color: gapInfo.color}}>
-                  {gapInfo.text}
-                </div>
-              )}
-
-              {permRuleWarning && (
-                <div style={{padding: '10px', borderRadius: '6px', fontWeight: 'bold', textAlign: 'center', marginBottom:'10px', background: '#fef2f2', color: '#dc2626', border: '2px solid #dc2626'}}>
-                  {permRuleWarning}
-                </div>
-              )}
+              {err && <div className="alert" style={{background:'#fee2e2'}}>{err}</div>}
+              {permWarn && <div className="alert" style={{background:'#fee2e2'}}>{permWarn}</div>}
+              {gapMsg && <div className="alert" style={{background:'#dcfce7'}}>{gapMsg}</div>}
 
               <div className="smart-dates">
-                <div className="date-group" style={{flex:1}}>
+                <div>
                   <label>Du</label>
-                  <input type="date" value={item.computedStart} disabled style={{background:'#eee'}} />
+                  <input type="date" value={item.computedStart} disabled />
                 </div>
-                <div className="date-group" style={{flex:1}}>
+                <div>
                   <label>Au</label>
-                  <input type="date" value={item.computedEnd} onChange={(e) => updateEndDate(item.id, e.target.value, item.computedStart)} style={{fontWeight:'bold', borderColor:'var(--primary)'}} />
+                  <input type="date" value={item.computedEnd} onChange={e => updateEnd(item.id, e.target.value, item.computedStart)} />
                 </div>
-                <div className="date-group duration-wrapper">
+                <div>
                   <label>Jours</label>
-                  <input type="number" value={item.duration} onChange={(e) => updateDuration(item.id, e.target.value)} />
-                  <span>j</span>
+                  <input type="number" value={item.duration} onChange={e => updateDur(item.id, e.target.value)} className="duration-input" />
                 </div>
               </div>
 
               {item.conflicts.length > 0 && (
-                <div className={`alert ${item.type === 'TRAVAIL' ? 'danger' : 'success'}`}>
-                  {item.type === 'TRAVAIL' ? '⚠️ Au Travail : ' : '✅ En Repos : '}
-                  {item.conflicts.map(c => {
-                    const position = getHolidayPosition(c.date, item.computedStart, item.computedEnd);
-                    return `${c.name} (${c.date} - ${position})`;
-                  }).join(', ')}
+                <div className="alert" style={{borderColor: item.type==='TRAVAIL'?'red':'green'}}>
+                  {item.conflicts.map(c => `${c.name} (${c.date} - ${getPos(c.date, item.computedStart, item.computedEnd)})`).join(', ')}
                 </div>
               )}
             </div>
           );
         })}
+      </section>
+      
+      {/* FOOTER : CRÉDITS */}
+      <footer className="app-footer">
+        Développé par
+        <span className="dev-name">Dr Kibeche Ali Dia Eddine</span>
+      </footer>
+
+      <div className="fab-container">
+        <button className="btn-fab btn-add-rot" onClick={addStd}>+ ROTATION</button>
+        <button className="btn-fab btn-add-conge" onClick={addConge}>+ CONGÉ</button>
       </div>
 
-      <div style={{display:'flex', gap:'10px', marginBottom:'40px'}}>
-        <button className="btn-add" onClick={addStandardCycle} style={{flex:2}}>+ Ajouter Rotation</button>
-        <button className="btn-add" onClick={addCongeBlock} style={{flex:1, background:'#f59e0b'}}>+ Congé</button>
-      </div>
     </div>
   );
 }
