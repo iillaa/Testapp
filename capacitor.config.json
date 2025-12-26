@@ -1,0 +1,6 @@
+{
+    "appId": "com.kibeche.permiplan",
+      "appName": "PermiPlan",
+        "webDir": "dist",
+          "bundledWebRuntime": false
+          }
