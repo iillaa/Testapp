@@ -1,42 +1,125 @@
-#root {
-  max-width: 1280px;
+/* src/App.css */
+:root {
+  color-scheme: light; /* OBLIGATOIRE : Force le mode clair sur Android */
+  
+  --primary: #2563eb;
+  --bg: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  
+  /* Couleurs des blocs */
+  --travail-bg: #eff6ff;
+  --travail-border: #3b82f6;
+  --repos-bg: #f0fdf4;
+  --repos-border: #22c55e;
+  --conge-bg: #fff7ed;
+  --conge-border: #f59e0b;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.container {
+  max-width: 600px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 15px;
+  min-height: 100vh;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+h2, h3 { text-align: center; color: var(--text-main); margin-top: 0; }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
+/* Cartes */
 .card {
-  padding: 2em;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
 }
 
-.read-the-docs {
-  color: #888;
+/* Inputs */
+input {
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 16px; /* Évite le zoom auto sur mobile */
+  background: white;
+  color: var(--text-main);
+  width: 100%;
+  box-sizing: border-box;
 }
+
+.date-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.date-group { flex: 1; }
+.date-group label { display: block; font-size: 0.8rem; color: var(--text-muted); font-weight: bold; }
+
+/* Timeline Items */
+.timeline-item {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 5px solid #ccc;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.timeline-item.travail { background: var(--travail-bg); border-color: var(--travail-border); }
+.timeline-item.permission { background: var(--repos-bg); border-color: var(--repos-border); }
+.timeline-item.conge_annuel { background: var(--conge-bg); border-color: var(--conge-border); }
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.item-title { font-weight: bold; font-size: 1.1rem; }
+
+/* Édition Dates Intelligente */
+.smart-dates {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.duration-wrapper {
+  position: relative;
+  width: 70px;
+}
+.duration-wrapper span {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.duration-wrapper input { text-align: center; padding-right: 20px; }
+
+/* Boutons */
+button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+button:active { transform: scale(0.98); }
+
+.btn-add {
+  width: 100%; padding: 15px;
+  background: var(--primary); color: white;
+  font-size: 1rem;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.btn-delete { background: none; font-size: 1.2rem; padding: 0 5px; }
+
+.alert {
+  margin-top: 10px; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+.alert.danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.alert.success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
