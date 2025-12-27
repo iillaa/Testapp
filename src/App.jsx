@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { calculateTimeline } from './utils/logic';
 import { loadAllData, saveData, createNewProfile, exportBackup } from './utils/storage';
 import './App.css';
@@ -7,6 +7,7 @@ import './App.css';
 function App() {
   // --- GLOBAL STATE ---
   const [data, setData] = useState(loadAllData);
+  const fileInputRef = useRef(null);
   
   const activeProfile = useMemo(() => 
     data.profiles.find(p => p.id === data.activeId) || data.profiles[0], 
@@ -234,17 +235,33 @@ function App() {
             <button className="btn-icon-plus" onClick={addHoli}>+</button>
           </div>
         </div>
+        </section> {/*
 
         {/* EXPORT / IMPORT EQUALIZED */}
-        <div className="backup-row">
-          <button className="btn-secondary" onClick={() => exportBackup(data)}>📤 Export</button>
-          <label className="btn-secondary">
-            📥 Import
-            <input type="file" accept=".json" onChange={handleImport} hidden />
-          </label>
-        </div>
-      </section>
+        {/* EXPORT / IMPORT EQUALIZED */}
+<div className="backup-row">
+  {/* Button 1: Export */}
+  <button className="btn-secondary" onClick={() => exportBackup(data)}>
+    📤 Export
+  </button>
 
+  {/* Button 2: Import (Now a real button) */}
+  <button 
+    className="btn-secondary" 
+    onClick={() => fileInputRef.current.click()}
+  >
+    📥 Import
+  </button>
+
+  {/* Hidden Input controlled by the button above */}
+  <input 
+    type="file" 
+    accept=".json" 
+    ref={fileInputRef} 
+    onChange={handleImport} 
+    style={{ display: 'none' }} 
+  />
+</div>
       {/* TIMELINE */}
       <section className="timeline-container">
         {timeline.map((item, index) => {
