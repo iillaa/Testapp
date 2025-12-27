@@ -1,7 +1,10 @@
 /* src/App.css */
+
+/* 1. VARIABLES & THEMES */
 :root {
   /* --- MI HOME PALETTE --- */
   --primary: #FF6700;       /* Xiaomi Orange */
+  --primary-hover: #e65c00;
   --primary-light: #fff0e5;
   --secondary: #898989;     /* High-Tech Silver */
   --bg-app: #F7F7F7;        /* Very light gray background */
@@ -10,18 +13,29 @@
   --text-muted: #999999;
   --border: #E5E5E5;
   --radius: 12px;
+  --radius-lg: 24px;
+  --radius-sm: 8px;
   --shadow: 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
 
-  /* Timeline Colors (Subtle/Clean) */
-  --card-travail: #ffffff;
-  --card-perm: #ffffff;
-  --card-conge: #ffffff;
+  /* --- TRANSPARENT FADED THEMES --- */
+  /* Blue / Rotation */
+  --theme-travail-bg: rgba(59, 130, 246, 0.08);
+  --theme-travail-border: #3b82f6;
+  --theme-travail-text: #1d4ed8;
   
-  --border-travail: #3b82f6; /* Blue indicator */
-  --border-perm: #10b981;    /* Green indicator */
-  --border-conge: #FF6700;   /* Orange indicator */
+  /* Green / Permission */
+  --theme-perm-bg: rgba(16, 185, 129, 0.08);
+  --theme-perm-border: #10b981;
+  --theme-perm-text: #047857;
+  
+  /* Orange / Congé */
+  --theme-conge-bg: rgba(255, 103, 0, 0.08);
+  --theme-conge-border: #FF6700;
+  --theme-conge-text: #c2410c;
 }
 
+/* 2. DARK MODE OVERRIDES */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-app: #121212;
@@ -29,18 +43,27 @@
     --text: #E0E0E0;
     --text-muted: #757575;
     --border: #333333;
-    --card-travail: #1E1E1E;
-    --card-perm: #1E1E1E;
-    --card-conge: #1E1E1E;
+    --shadow: 0 4px 12px rgba(0,0,0,0.2);
+    
+    --theme-travail-bg: rgba(59, 130, 246, 0.15);
+    --theme-perm-bg: rgba(16, 185, 129, 0.15);
+    --theme-conge-bg: rgba(255, 103, 0, 0.15);
   }
+}
+
+/* 3. BASE STYLES */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--bg-app);
   color: var(--text);
-  font-family: 'Roboto', 'Inter', sans-serif;
+  font-family: 'Roboto', 'Inter', -apple-system, sans-serif;
   margin: 0;
-  padding-bottom: 100px; /* Space for FAB */
+  padding: 0;
+  line-height: 1.5;
   min-height: 100vh;
 }
 
@@ -51,227 +74,434 @@ body {
   display: flex; 
   flex-direction: column; 
   gap: 16px;
+  padding-bottom: 120px; /* Space for FAB */
 }
 
-/* --- HEADER --- */
+/* 4. HEADER & PROFILE */
 .main-header {
   text-align: center;
-  margin-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
 
 .app-title-main {
-  font-size: 1.5rem; 
-  font-weight: 600; 
+  font-size: 1.6rem; 
+  font-weight: 700; 
   color: var(--text);
-  margin: 0 0 10px 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.8px;
 }
 
 .version-tag { 
-  font-size: 0.7rem; 
+  font-size: 0.65rem; 
   background: var(--border); 
   color: var(--text-muted); 
-  padding: 2px 6px; 
-  border-radius: 4px; 
+  padding: 2px 8px; 
+  border-radius: 6px; 
   vertical-align: middle; 
-  font-weight: 400; 
+  font-weight: 500;
+  margin-left: 5px;
 }
 
 .profile-bar {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--surface); padding: 12px;
+  display: flex; 
+  align-items: center; 
+  gap: 12px;
+  background: var(--surface); 
+  padding: 14px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  margin-bottom: 15px;
+  border: 1px solid var(--border);
 }
 
 .avatar-circle {
-  width: 36px; height: 36px; 
-  background: var(--bg-app); 
-  color: var(--text);
+  width: 40px; 
+  height: 40px; 
+  background: var(--primary-light); 
+  color: var(--primary);
   border-radius: 50%; 
-  font-weight: 600; font-size: 1rem;
-  display: grid; place-items: center;
+  font-weight: 700; 
+  font-size: 1.1rem;
+  display: grid; 
+  place-items: center;
 }
 
 .profile-selector-clean {
-  flex: 1; border: none; background: transparent; 
-  font-weight: 500; font-size: 1rem; color: var(--text);
+  flex: 1; 
+  border: none; 
+  background: transparent; 
+  font-weight: 600; 
+  font-size: 1.05rem; 
+  color: var(--text);
+  cursor: pointer;
 }
 
 .btn-mini { 
-  padding: 8px 14px; 
-  border-radius: 20px; 
+  padding: 6px 12px; 
+  border-radius: 10px; 
   border: 1px solid var(--border); 
   background: var(--surface); 
-  font-size: 0.85rem; 
-  font-weight: 500;
-  color: var(--text); 
+  font-size: 0.8rem; 
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.btn-danger-text { color: #ef4444; border-color: rgba(239,68,68,0.2); }
+.btn-mini:hover { background: var(--bg-app); }
+.btn-danger-text { color: #ef4444; border-color: rgba(239,68,68,0.1); }
 
-/* --- PROGRESS CARD --- */
+/* 5. PROGRESS & DASHBOARD */
 .progress-card {
-  background: var(--surface); padding: 16px; 
+  background: var(--surface); 
+  padding: 18px; 
   border-radius: var(--radius); 
   box-shadow: var(--shadow);
-}
-.progress-header { 
-  display: flex; justify-content: space-between; 
-  font-size: 0.8rem; font-weight: 600; 
-  margin-bottom: 8px; color: var(--text-muted); 
-}
-.progress-track { 
-  height: 6px; background: var(--bg-app); 
-  border-radius: 3px; overflow: hidden; 
-}
-.progress-fill { 
-  height: 100%; transition: width 0.5s ease; 
-  border-radius: 3px; 
+  border: 1px solid var(--border);
 }
 
-/* --- COMMON CARD STYLES --- */
-.card, .timeline-item {
+.progress-header { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  margin-bottom: 10px; 
+  color: var(--text); 
+}
+
+.progress-track { 
+  height: 10px; 
+  background: var(--bg-app); 
+  border-radius: 5px; 
+  overflow: hidden; 
+}
+
+.progress-fill { 
+  height: 100%; 
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease; 
+  border-radius: 5px; 
+}
+
+/* 6. FORM ELEMENTS */
+.card {
   background: var(--surface); 
   border-radius: var(--radius); 
   box-shadow: var(--shadow); 
-  padding: 20px; 
-  border: none;
+  padding: 24px; 
+  border: 1px solid var(--border);
 }
 
 label { 
-  display: block; font-size: 0.75rem; 
-  font-weight: 600; text-transform: uppercase; 
-  color: var(--text-muted); margin-bottom: 6px; 
+  display: block; 
+  font-size: 0.7rem; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  color: var(--text-muted); 
+  margin-bottom: 8px; 
+  letter-spacing: 0.5px;
 }
 
 input, select {
-  width: 100%; padding: 12px; 
-  border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg-app); color: var(--text); 
-  font-weight: 500; font-size: 0.95rem;
-  box-sizing: border-box; /* Fixes width overflow */
+  width: 100%; 
+  padding: 12px 14px; 
+  border-radius: var(--radius-sm); 
+  border: 1px solid var(--border);
+  background: var(--bg-app); 
+  color: var(--text); 
+  font-weight: 500; 
+  font-size: 0.95rem;
+  transition: all 0.2s;
 }
+
 input:focus, select:focus {
-  outline: 2px solid var(--primary);
-  border-color: transparent;
+  outline: none;
+  border-color: var(--primary);
   background: var(--surface);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
-/* --- GRAY PANEL FOR READ-ONLY DATES --- */
 input:disabled {
-  background-color: #EBEBEB; /* Darker gray for read-only */
+  background-color: #f0f0f0;
   color: var(--text-muted);
-  border: 1px solid transparent;
-  cursor: default;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
-/* --- LAYOUT UTILS --- */
-.row { display: flex; gap: 12px; margin-bottom: 12px; }
+/* 7. LAYOUT UTILS */
+.row { display: flex; gap: 14px; margin-bottom: 16px; }
 .col { flex: 1; }
 
-/* Holiday Tags */
-.holidays-section { margin-top: 15px; }
-.tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-.tag { 
-  padding: 6px 12px; border-radius: 20px; 
-  background: var(--bg-app); color: var(--text);
-  font-size: 0.8rem; display: flex; gap: 8px; align-items: center; 
-}
-.tag button { 
-  background: none; border: none; color: #ef4444; 
-  font-weight: bold; cursor: pointer; padding: 0;
-}
-.add-row { display: flex; gap: 8px; }
-.btn-icon-plus {
-  width: 48px;
-  background: var(--primary); color: white; 
-  border: none; border-radius: 8px; 
-  font-size: 1.5rem; display: grid; place-items: center;
-  cursor: pointer;
+/* 8. HOLIDAY SECTION (REFINED) */
+.holidays-section { 
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* --- EXPORT/IMPORT (Equal Size) --- */
-.backup-row { 
-  margin-top: 20px; padding-top: 15px; 
-  border-top: 1px solid var(--border); 
-  display: flex; gap: 12px; 
+.tags-container { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
 }
+
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-app);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  transition: transform 0.2s;
+}
+
+.tag-name { flex: 2; font-weight: 600; font-size: 0.9rem; }
+.tag-date { flex: 1; color: var(--text-muted); font-size: 0.85rem; }
+
+.btn-delete { 
+  background: transparent; 
+  border: none; 
+  color: #ff4d4f; 
+  font-size: 1.3rem; 
+  cursor: pointer; 
+  padding: 0 5px;
+}
+
+.add-row { display: flex; gap: 8px; align-items: center; }
+.input-name { flex: 2 !important; }
+.input-date { flex: 1.2 !important; }
+
+.btn-icon-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-icon-plus:hover { background: var(--primary-hover); }
+
+/* 9. BACKUP AREA */
+.backup-row { 
+  margin-top: 25px; 
+  padding-top: 20px; 
+  border-top: 1px solid var(--border); 
+  display: flex; 
+  gap: 12px; 
+}
+
 .btn-secondary { 
-  flex: 1; /* Key for equal size */
-  padding: 12px; border-radius: 8px; 
+  flex: 1;
+  padding: 12px; 
+  border-radius: var(--radius-sm); 
   border: 1px solid var(--border); 
   background: var(--bg-app); 
-  color: var(--text); font-weight: 600; 
-  text-align: center; cursor: pointer;
-  display: block;
-  box-sizing: border-box;
+  color: var(--text); 
+  font-weight: 700; 
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: #eee; border-color: #ccc; }
+
+/* 10. TIMELINE (FADED THEMES) */
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* --- TIMELINE ITEM --- */
 .timeline-item { 
-  margin-bottom: 16px; position: relative; 
-  border-left: 4px solid transparent;
+  padding: 22px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.timeline-item.travail { border-color: var(--border-travail); }
-.timeline-item.permission { border-color: var(--border-perm); }
-.timeline-item.conge_annuel { border-color: var(--border-conge); }
+
+.timeline-item.travail { 
+  background: var(--theme-travail-bg); 
+  border-color: var(--theme-travail-border); 
+}
+.timeline-item.permission { 
+  background: var(--theme-perm-bg); 
+  border-color: var(--theme-perm-border); 
+}
+.timeline-item.conge_annuel { 
+  background: var(--theme-conge-bg); 
+  border-color: var(--theme-conge-border); 
+}
 
 .item-header { 
-  display: flex; justify-content: space-between; 
-  align-items: center; margin-bottom: 15px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 18px; 
 }
-.item-title { font-weight: 600; font-size: 1.1rem; }
 
-/* --- CENTERED DELETE BUTTON --- */
+.item-title { 
+  font-weight: 700; 
+  font-size: 1.15rem;
+  letter-spacing: -0.3px;
+}
+
 .btn-delete-x {
-  width: 36px; height: 36px; 
-  border-radius: 8px; 
-  background: var(--bg-app); 
-  border: none; color: var(--text-muted);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; cursor: pointer;
-  transition: all 0.2s;
+  width: 36px; 
+  height: 36px; 
+  border-radius: 10px; 
+  background: rgba(0,0,0,0.05); 
+  border: none; 
+  color: var(--text-muted);
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  cursor: pointer;
 }
 .btn-delete-x:hover { background: #fee2e2; color: #ef4444; }
 
-/* --- DATE GRID (No Overlap) --- */
+/* 11. DATA GRIDS */
 .date-grid { 
-  display: flex; gap: 12px; 
-  flex-wrap: wrap; /* Allows wrapping on small screens */
-} 
-.date-grid .field { flex: 1; min-width: 120px; } /* Minimum width enforced */
-.date-grid .small { flex: 0.5; min-width: 80px; }
-
-/* --- ALERTS --- */
-.status-pill { 
-  display: inline-block; padding: 4px 10px; 
-  border-radius: 6px; font-size: 0.75rem; 
-  font-weight: 700; margin-bottom: 12px; 
+  display: flex; 
+  gap: 12px; 
+  flex-wrap: wrap; 
 }
-.good { background: #d1fae5; color: #065f46; }
-.warn { background: #fee2e2; color: #991b1b; }
-.info { background: #dbeafe; color: #1e40af; }
-.danger { background: #ef4444; color: white; }
+.date-grid .field { flex: 1; min-width: 140px; }
+.date-grid .small { flex: 0.6; min-width: 80px; }
+
+/* 12. ALERTS & PILLS */
+.status-pill { 
+  display: inline-block; 
+  padding: 5px 12px; 
+  border-radius: 8px; 
+  font-size: 0.75rem; 
+  font-weight: 800; 
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.good { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.warn { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
+.info { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.danger { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
 .conflict-box { 
-  margin-top: 12px; padding: 10px; 
-  background: #fef2f2; border: 1px solid #fee2e2; 
-  border-radius: 8px; color: #ef4444; font-size: 0.85rem; 
+  margin-top: 15px; 
+  padding: 12px; 
+  background: rgba(239, 68, 68, 0.05); 
+  border: 1px solid rgba(239, 68, 68, 0.1); 
+  border-radius: 10px; 
+  color: #dc2626; 
+  font-size: 0.85rem; 
+  font-weight: 500;
 }
 
-/* --- FAB --- */
+/* 13. FLOATING ACTION BUTTONS */
 .fab-zone { 
-  position: fixed; bottom: 30px; left: 50%; 
+  position: fixed; 
+  bottom: 30px; 
+  left: 50%; 
   transform: translateX(-50%); 
-  display: flex; gap: 16px; width: 90%; max-width: 400px; 
-  z-index: 100; 
+  display: flex; 
+  gap: 16px; 
+  width: 90%; 
+  max-width: 420px; 
+  z-index: 999; 
 }
+
 .fab { 
-  flex: 1; padding: 16px; border-radius: 24px; 
-  border: none; font-weight: 600; text-transform: uppercase; 
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-size: 0.9rem; 
+  flex: 1; 
+  padding: 18px; 
+  border-radius: 28px; 
+  border: none; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+  font-size: 0.95rem; 
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-.fab.main { background: var(--primary); color: white; }
-.fab.sub { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+.fab:active { transform: scale(0.96); }
+
+.fab.main { 
+  background: var(--primary); 
+  color: white; 
+}
+.fab.sub { 
+  background: var(--surface); 
+  color: var(--text); 
+  border: 1px solid var(--border); 
+}
+
+/* 14. ANIMATIONS */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.timeline-item {
+  animation: fadeIn 0.4s ease forwards;
+}
+/* --- BRANDING & FOOTER STYLES --- */
+.app-title-main {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--primary) 0%, #ff8c00 100%);
+  
+  /* Vendor Prefix for Webkit browsers (Chrome, Safari, Edge) */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  
+  /* Standard property for compatibility (Firefox and future-proofing) */
+  background-clip: text;
+  
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+}
+.app-footer {
+  margin-top: 40px;
+  padding-bottom: 40px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.footer-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--primary);
+  margin: 0 auto 15px;
+  border-radius: 2px;
+  opacity: 0.3;
+}
+
+.dev-credit {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.dev-name {
+  font-family: 'Georgia', serif; /* Elegant font for the name */
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Glassmorphism Polish for Faded Panels */
+.timeline-item {
+  backdrop-filter: blur(8px); /* Adds that premium Xiaomi feel */
+  -webkit-backdrop-filter: blur(8px);
+}

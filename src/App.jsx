@@ -1,12 +1,19 @@
-// src/App.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { calculateTimeline } from './utils/logic';
 import { loadAllData, saveData, createNewProfile, exportBackup } from './utils/storage';
 import './App.css';
 
+// Helpers moved outside to prevent re-declaration
+const getAvatar = (name) => name ? name.charAt(0).toUpperCase() : "?";
+const getPos = (h, s, e) => {
+  const r = (new Date(h) - new Date(s)) / (new Date(e) - new Date(s));
+  return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
+};
+
 function App() {
   // --- GLOBAL STATE ---
   const [data, setData] = useState(loadAllData);
+  const [newHoliday, setNewHoliday] = useState({ name: "", date: "" });
   const fileInputRef = useRef(null);
   
   const activeProfile = useMemo(() => 
@@ -53,25 +60,19 @@ function App() {
     if (e.target.files[0]) r.readAsText(e.target.files[0]);
   };
 
-  // --- LOGIC VAGUES UPDATED (Juin -> Mai, 50 jours) ---
   const waves = useMemo(() => {
     const list = [];
-    // Start: June 1st of Ref Year
     const startSeason = new Date(`${activeProfile.refYear}-06-01`);
-    // End: May 31st of Next Year
     const endSeason = new Date(`${activeProfile.refYear + 1}-05-31`);
-    
     let currentWaveDate = new Date(startSeason);
     let index = 1;
 
-    // Loop until we exceed the end date
     while (currentWaveDate <= endSeason) {
         list.push({ 
             id: index, 
             label: `Vague ${index}`, 
             date: currentWaveDate.toISOString().split('T')[0] 
         });
-        // Add 50 days
         currentWaveDate.setDate(currentWaveDate.getDate() + 50);
         index++;
     }
@@ -86,7 +87,6 @@ function App() {
     calculateTimeline(activeProfile.startDate, activeProfile.blocks, activeProfile.holidays), 
   [activeProfile.startDate, activeProfile.blocks, activeProfile.holidays]);
 
-  // --- DASHBOARD STATE ---
   const dashboardState = useMemo(() => {
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -125,7 +125,6 @@ function App() {
     return { label, percent, color };
   }, [timeline, activeProfile.startDate]);
 
-  // --- LOGIC HELPERS ---
   const getSeqError = (idx, type) => {
     if (idx === 0) return null;
     const prev = activeProfile.blocks[idx-1];
@@ -135,12 +134,6 @@ function App() {
     return null;
   };
 
-  const getPos = (h, s, e) => {
-    const r = (new Date(h)-new Date(s))/(new Date(e)-new Date(s));
-    return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
-  };
-
-  const [newHoliday, setNewHoliday] = useState({ name: "", date: "" });
   const addHoli = () => {
     if (!newHoliday.name || !newHoliday.date) return;
     updateProfile('holidays', [...activeProfile.holidays, { id: Date.now(), ...newHoliday }]);
@@ -157,15 +150,10 @@ function App() {
     if (diff >= 0) updateBlock(id, 'duration', diff);
   };
 
-  // Avatar helper
-  const getAvatar = (name) => name ? name.charAt(0).toUpperCase() : "?";
-
   return (
     <div className="container">
-      
-      {/* HEADER MI HOME STYLE */}
       <header className="main-header">
-        <h1 className="app-title-main">Mi Planning <span className="version-tag">v2.0</span></h1>
+        <h1 className="app-title-main">Permi-plan <span className="version-tag">v2.0</span></h1>
         
         <div className="profile-bar">
            <div className="avatar-circle">{getAvatar(activeProfile.name)}</div>
@@ -180,7 +168,6 @@ function App() {
             <button className="btn-mini btn-danger-text" onClick={handleDeleteProfile}>Del</button>
         </div>
 
-        {/* PROGRESS BAR */}
         <div className="progress-card">
           <div className="progress-header">
             <span>{dashboardState.label}</span>
@@ -195,7 +182,6 @@ function App() {
         </div>
       </header>
       
-      {/* CONFIGURATION */}
       <section className="card">
         <div className="row">
           <div className="col">
@@ -223,50 +209,31 @@ function App() {
           <label>Jours Fériés</label>
           <div className="tags-container">
             {activeProfile.holidays.map(h => (
-              <span key={h.id} className="tag">
-                {h.name}
-                <button onClick={() => updateProfile('holidays', activeProfile.holidays.filter(x => x.id !== h.id))}>×</button>
-              </span>
+              <div key={h.id} className="tag-row">
+                <span className="tag-name">{h.name}</span>
+                <span className="tag-date">{h.date}</span>
+                <button className="btn-delete" onClick={() => updateProfile('holidays', activeProfile.holidays.filter(x => x.id !== h.id))}>×</button>
+              </div>
             ))}
           </div>
           <div className="add-row">
-            <input placeholder="Ex: Aïd..." value={newHoliday.name} onChange={e => setNewHoliday({...newHoliday, name: e.target.value})} style={{flex:2}} />
-            <input type="date" value={newHoliday.date} onChange={e => setNewHoliday({...newHoliday, date: e.target.value})} style={{flex:1}} />
+            <input type="text" placeholder="Nom..." value={newHoliday.name} onChange={e => setNewHoliday({...newHoliday, name: e.target.value})} className="input-name" />
+            <input type="date" value={newHoliday.date} onChange={e => setNewHoliday({...newHoliday, date: e.target.value})} className="input-date" />
             <button className="btn-icon-plus" onClick={addHoli}>+</button>
           </div>
         </div>
-        </section> {/*
+      
+        <div className="backup-row">
+          <button className="btn-secondary" onClick={() => exportBackup(data)}>📤 Export</button>
+          <button className="btn-secondary" onClick={() => fileInputRef.current.click()}>📥 Import</button>
+          <input type="file" accept=".json" ref={fileInputRef} onChange={handleImport} style={{ display: 'none' }} />
+        </div>
+      </section>
 
-        {/* EXPORT / IMPORT EQUALIZED */}
-        {/* EXPORT / IMPORT EQUALIZED */}
-<div className="backup-row">
-  {/* Button 1: Export */}
-  <button className="btn-secondary" onClick={() => exportBackup(data)}>
-    📤 Export
-  </button>
-
-  {/* Button 2: Import (Now a real button) */}
-  <button 
-    className="btn-secondary" 
-    onClick={() => fileInputRef.current.click()}
-  >
-    📥 Import
-  </button>
-
-  {/* Hidden Input controlled by the button above */}
-  <input 
-    type="file" 
-    accept=".json" 
-    ref={fileInputRef} 
-    onChange={handleImport} 
-    style={{ display: 'none' }} 
-  />
-</div>
-      {/* TIMELINE */}
       <section className="timeline-container">
         {timeline.map((item, index) => {
           let count = 0;
-          for(let i=0; i<=index; i++) if(activeProfile.blocks[i].type === 'TRAVAIL') count++;
+          for(let i=0; i<=index; i++) if(activeProfile.blocks[i]?.type === 'TRAVAIL') count++;
           
           const label = item.type === 'CONGE_ANNUEL' ? 'Grand Congé' : item.type === 'TRAVAIL' ? `Rotation ${count}` : `Permission ${count}`;
           const seqErr = getSeqError(index, item.type);
@@ -291,11 +258,7 @@ function App() {
                 <span className="item-title">
                   {item.type === 'TRAVAIL' ? '🏭' : item.type === 'CONGE_ANNUEL' ? '🏖️' : '🏠'} {label}
                 </span>
-                
-                {/* CENTERED X BUTTON */}
-                <button className="btn-delete-x" onClick={() => updateProfile('blocks', activeProfile.blocks.filter(b => b.id !== item.id))}>
-                  ✕
-                </button>
+                <button className="btn-delete-x" onClick={() => updateProfile('blocks', activeProfile.blocks.filter(b => b.id !== item.id))}>✕</button>
               </div>
 
               {seqErr && <div className="status-pill danger">{seqErr}</div>}
@@ -304,7 +267,6 @@ function App() {
               <div className="date-grid">
                 <div className="field">
                   <label>Du (Fixe)</label>
-                  {/* DISABLED INPUT TRIGGERS GRAY PANEL STYLE */}
                   <input type="date" value={item.computedStart} disabled />
                 </div>
                 <div className="field">
@@ -333,16 +295,23 @@ function App() {
       
       <div style={{height: '100px'}}></div>
 
-      {/* FAB */}
       <div className="fab-zone">
-        <button className="fab main" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: Date.now(), type:'TRAVAIL', duration:45}, {id: Date.now()+1, type:'PERMISSION', duration:15}])}>
+        <button className="fab main" onClick={() => {
+          const now = Date.now();
+          updateProfile('blocks', [...activeProfile.blocks, {id: `T-${now}`, type:'TRAVAIL', duration:45}, {id: `P-${now+1}`, type:'PERMISSION', duration:15}]);
+        }}>
           + Cycle
         </button>
-        <button className="fab sub" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: Date.now(), type:'CONGE_ANNUEL', duration:30}])}>
+        <button className="fab sub" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: `C-${Date.now()}`, type:'CONGE_ANNUEL', duration:30}])}>
           + Congé
         </button>
       </div>
-    </div>
+      <footer className="app-footer">
+        <div className="footer-divider"></div>
+        <p className="dev-credit">Developed by</p>
+        <p className="dev-name">Dr. Kibeche Ali Dia Eddine</p>
+      </footer>
+    </div> // End of container
   );
 }
 
