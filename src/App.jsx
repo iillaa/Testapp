@@ -153,7 +153,7 @@ function App() {
   return (
     <div className="container">
       <header className="main-header">
-        <h1 className="app-title-main">Permi-plan <span className="version-tag">v2.0</span></h1>
+        <h1 className="app-title-main">Permi-Plan <span className="version-tag">v2.0</span></h1>
         
         <div className="profile-bar">
            <div className="avatar-circle">{getAvatar(activeProfile.name)}</div>
@@ -302,7 +302,7 @@ function App() {
         }}>
           + Cycle
         </button>
-        <button className="fab sub" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: `C-${Date.now()}`, type:'CONGE_ANNUEL', duration:30}])}>
+        <button className="fab sub" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: `C-${Date.now()}`, type:'CONGE_ANNUEL', duration:50}])}>
           + Congé
         </button>
       </div>

@@ -1,15 +1,14 @@
 /* src/App.css */
 
-/* 1. VARIABLES & THEMES */
+/* 1. VARIABLES & THEMES (FORCED LIGHT MODE) */
 :root {
-  /* --- MI HOME PALETTE --- */
-  --primary: #FF6700;       /* Xiaomi Orange */
+  --primary: #FF6700;       
   --primary-hover: #e65c00;
   --primary-light: #fff0e5;
-  --secondary: #898989;     /* High-Tech Silver */
-  --bg-app: #F7F7F7;        /* Very light gray background */
-  --surface: #FFFFFF;       /* Pure white cards */
-  --text: #333333;          /* Dark gray text */
+  --secondary: #898989;     
+  --bg-app: #F7F7F7;        
+  --surface: #FFFFFF;       
+  --text: #333333;          
   --text-muted: #999999;
   --border: #E5E5E5;
   --radius: 12px;
@@ -18,38 +17,20 @@
   --shadow: 0 4px 12px rgba(0,0,0,0.03);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
 
-  /* --- TRANSPARENT FADED THEMES --- */
-  /* Blue / Rotation */
   --theme-travail-bg: rgba(59, 130, 246, 0.08);
   --theme-travail-border: #3b82f6;
   --theme-travail-text: #1d4ed8;
   
-  /* Green / Permission */
   --theme-perm-bg: rgba(16, 185, 129, 0.08);
   --theme-perm-border: #10b981;
   --theme-perm-text: #047857;
   
-  /* Orange / Congé */
   --theme-conge-bg: rgba(255, 103, 0, 0.08);
   --theme-conge-border: #FF6700;
   --theme-conge-text: #c2410c;
 }
 
-/* 2. DARK MODE OVERRIDES */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-app: #121212;
-    --surface: #1E1E1E;
-    --text: #E0E0E0;
-    --text-muted: #757575;
-    --border: #333333;
-    --shadow: 0 4px 12px rgba(0,0,0,0.2);
-    
-    --theme-travail-bg: rgba(59, 130, 246, 0.15);
-    --theme-perm-bg: rgba(16, 185, 129, 0.15);
-    --theme-conge-bg: rgba(255, 103, 0, 0.15);
-  }
-}
+/* 2. DARK MODE REMOVED */
 
 /* 3. BASE STYLES */
 * {
@@ -58,8 +39,8 @@
 }
 
 body {
-  background: var(--bg-app);
-  color: var(--text);
+  background: var(--bg-app) !important;
+  color: var(--text) !important;
   font-family: 'Roboto', 'Inter', -apple-system, sans-serif;
   margin: 0;
   padding: 0;
@@ -73,8 +54,8 @@ body {
   padding: 16px;
   display: flex; 
   flex-direction: column; 
-  gap: 16px;
-  padding-bottom: 120px; /* Space for FAB */
+  gap: 20px; /* Increased gap for better vertical rhythm */
+  padding-bottom: 140px; /* More space for FAB and Footer visibility */
 }
 
 /* 4. HEADER & PROFILE */
@@ -82,25 +63,34 @@ body {
   text-align: center;
   margin-top: 10px;
   margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .app-title-main {
-  font-size: 1.6rem; 
-  font-weight: 700; 
-  color: var(--text);
-  margin: 0 0 8px 0;
-  letter-spacing: -0.8px;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--primary) 0%, #ff8c00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin: 0;
 }
 
 .version-tag { 
-  font-size: 0.65rem; 
-  background: var(--border); 
-  color: var(--text-muted); 
+  font-size: 0.7rem; 
+  background: var(--primary-light); 
+  color: var(--primary); 
   padding: 2px 8px; 
   border-radius: 6px; 
-  vertical-align: middle; 
-  font-weight: 500;
-  margin-left: 5px;
+  font-weight: 800;
+  border: 1px solid rgba(255, 103, 0, 0.3);
+  vertical-align: middle;
+  display: inline-block;
+  -webkit-text-fill-color: var(--primary);
 }
 
 .profile-bar {
@@ -230,12 +220,12 @@ input:disabled {
 .row { display: flex; gap: 14px; margin-bottom: 16px; }
 .col { flex: 1; }
 
-/* 8. HOLIDAY SECTION (REFINED) */
+/* 8. HOLIDAY SECTION */
 .holidays-section { 
-  margin-top: 20px;
+  margin-top: 5px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .tags-container { 
@@ -251,7 +241,6 @@ input:disabled {
   background: var(--bg-app);
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  transition: transform 0.2s;
 }
 
 .tag-name { flex: 2; font-weight: 600; font-size: 0.9rem; }
@@ -263,7 +252,6 @@ input:disabled {
   color: #ff4d4f; 
   font-size: 1.3rem; 
   cursor: pointer; 
-  padding: 0 5px;
 }
 
 .add-row { display: flex; gap: 8px; align-items: center; }
@@ -284,13 +272,11 @@ input:disabled {
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s;
 }
-.btn-icon-plus:hover { background: var(--primary-hover); }
 
 /* 9. BACKUP AREA */
 .backup-row { 
-  margin-top: 25px; 
+  margin-top: 15px; 
   padding-top: 20px; 
   border-top: 1px solid var(--border); 
   display: flex; 
@@ -306,15 +292,13 @@ input:disabled {
   color: var(--text); 
   font-weight: 700; 
   cursor: pointer;
-  transition: all 0.2s;
 }
-.btn-secondary:hover { background: #eee; border-color: #ccc; }
 
-/* 10. TIMELINE (FADED THEMES) */
+/* 10. TIMELINE (SPACING FIXED) */
 .timeline-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 16px; /* Consistency with container gaps */
 }
 
 .timeline-item { 
@@ -323,85 +307,37 @@ input:disabled {
   border: 1px solid transparent;
   box-shadow: var(--shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.timeline-item.travail { 
-  background: var(--theme-travail-bg); 
-  border-color: var(--theme-travail-border); 
-}
-.timeline-item.permission { 
-  background: var(--theme-perm-bg); 
-  border-color: var(--theme-perm-border); 
-}
-.timeline-item.conge_annuel { 
-  background: var(--theme-conge-bg); 
-  border-color: var(--theme-conge-border); 
-}
+.timeline-item.travail { background: var(--theme-travail-bg); border-color: var(--theme-travail-border); }
+.timeline-item.permission { background: var(--theme-perm-bg); border-color: var(--theme-perm-border); }
+.timeline-item.conge_annuel { background: var(--theme-conge-bg); border-color: var(--theme-conge-border); }
 
-.item-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 18px; 
-}
-
-.item-title { 
-  font-weight: 700; 
-  font-size: 1.15rem;
-  letter-spacing: -0.3px;
-}
+.item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.item-title { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.3px; }
 
 .btn-delete-x {
-  width: 36px; 
-  height: 36px; 
-  border-radius: 10px; 
-  background: rgba(0,0,0,0.05); 
-  border: none; 
-  color: var(--text-muted);
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  cursor: pointer;
+  width: 36px; height: 36px; border-radius: 10px; background: rgba(0,0,0,0.05); border: none; color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
-.btn-delete-x:hover { background: #fee2e2; color: #ef4444; }
 
 /* 11. DATA GRIDS */
-.date-grid { 
-  display: flex; 
-  gap: 12px; 
-  flex-wrap: wrap; 
-}
+.date-grid { display: flex; gap: 12px; flex-wrap: wrap; }
 .date-grid .field { flex: 1; min-width: 140px; }
 .date-grid .small { flex: 0.6; min-width: 80px; }
 
-/* 12. ALERTS & PILLS */
-.status-pill { 
-  display: inline-block; 
-  padding: 5px 12px; 
-  border-radius: 8px; 
-  font-size: 0.75rem; 
-  font-weight: 800; 
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
+/* 12. ALERTS */
+.status-pill { display: inline-block; padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; margin-bottom: 15px; }
 .good { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .warn { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
 .info { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
 .danger { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
-.conflict-box { 
-  margin-top: 15px; 
-  padding: 12px; 
-  background: rgba(239, 68, 68, 0.05); 
-  border: 1px solid rgba(239, 68, 68, 0.1); 
-  border-radius: 10px; 
-  color: #dc2626; 
-  font-size: 0.85rem; 
-  font-weight: 500;
-}
+.conflict-box { margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 10px; color: #dc2626; font-size: 0.85rem; font-weight: 500; }
 
-/* 13. FLOATING ACTION BUTTONS */
+/* 13. FAB ZONE */
 .fab-zone { 
   position: fixed; 
   bottom: 30px; 
@@ -421,87 +357,26 @@ input:disabled {
   border: none; 
   font-weight: 700; 
   text-transform: uppercase; 
-  letter-spacing: 0.5px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
   font-size: 0.95rem; 
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s;
 }
-
 .fab:active { transform: scale(0.96); }
+.fab.main { background: var(--primary); color: white; }
+.fab.sub { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 
-.fab.main { 
-  background: var(--primary); 
-  color: white; 
-}
-.fab.sub { 
-  background: var(--surface); 
-  color: var(--text); 
-  border: 1px solid var(--border); 
-}
-
-/* 14. ANIMATIONS */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.timeline-item {
-  animation: fadeIn 0.4s ease forwards;
-}
-/* --- BRANDING & FOOTER STYLES --- */
-.app-title-main {
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, var(--primary) 0%, #ff8c00 100%);
-  
-  /* Vendor Prefix for Webkit browsers (Chrome, Safari, Edge) */
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  
-  /* Standard property for compatibility (Firefox and future-proofing) */
-  background-clip: text;
-  
-  font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: -1px;
-  margin-bottom: 4px;
-}
+/* 14. FOOTER & CREDITS */
 .app-footer {
-  margin-top: 40px;
-  padding-bottom: 40px;
+  margin-top: 20px;
+  padding-bottom: 20px;
   text-align: center;
-  opacity: 0.8;
+  opacity: 0.9;
 }
+.footer-divider { width: 40px; height: 2px; background: var(--primary); margin: 0 auto 15px; border-radius: 2px; opacity: 0.3; }
+.dev-credit { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
+.dev-name { font-family: 'Georgia', serif; font-style: italic; font-size: 1.1rem; color: var(--text); margin: 0; font-weight: 500; }
 
-.footer-divider {
-  width: 40px;
-  height: 2px;
-  background: var(--primary);
-  margin: 0 auto 15px;
-  border-radius: 2px;
-  opacity: 0.3;
-}
-
-.dev-credit {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-
-.dev-name {
-  font-family: 'Georgia', serif; /* Elegant font for the name */
-  font-style: italic;
-  font-size: 1.1rem;
-  color: var(--text);
-  margin: 0;
-  font-weight: 500;
-}
-
-/* Glassmorphism Polish for Faded Panels */
-.timeline-item {
-  backdrop-filter: blur(8px); /* Adds that premium Xiaomi feel */
-  -webkit-backdrop-filter: blur(8px);
-}
+/* 15. ANIMATIONS */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.timeline-item { animation: fadeIn 0.4s ease forwards; }
