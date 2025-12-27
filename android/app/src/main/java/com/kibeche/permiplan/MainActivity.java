@@ -1,4 +1,4 @@
-package com.kibeche.permiplan;
+package com.iillaa.permiplan;
 
 import com.getcapacitor.BridgeActivity;
 

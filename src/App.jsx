@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculateTimeline } from './utils/logic';
 import { loadAllData, saveData, createNewProfile, exportBackup } from './utils/storage';
@@ -45,19 +46,33 @@ function App() {
           updateProfile('blocks', d.blocks);
           if(d.startDate) updateProfile('startDate', d.startDate);
         }
-        alert("Restauré !");
+        alert("Restauré avec succès !");
       } catch { alert("Fichier invalide"); }
     };
     if (e.target.files[0]) r.readAsText(e.target.files[0]);
   };
 
-  // --- CALCS ---
+  // --- LOGIC VAGUES UPDATED (Juin -> Mai, 50 jours) ---
   const waves = useMemo(() => {
     const list = [];
+    // Start: June 1st of Ref Year
     const startSeason = new Date(`${activeProfile.refYear}-06-01`);
-    for (let i = 0; i < 6; i++) { 
-      const d = new Date(startSeason); d.setDate(startSeason.getDate() + (i * 50)); 
-      list.push({ id: i + 1, label: `Vague ${i + 1}`, date: d.toISOString().split('T')[0] });
+    // End: May 31st of Next Year
+    const endSeason = new Date(`${activeProfile.refYear + 1}-05-31`);
+    
+    let currentWaveDate = new Date(startSeason);
+    let index = 1;
+
+    // Loop until we exceed the end date
+    while (currentWaveDate <= endSeason) {
+        list.push({ 
+            id: index, 
+            label: `Vague ${index}`, 
+            date: currentWaveDate.toISOString().split('T')[0] 
+        });
+        // Add 50 days
+        currentWaveDate.setDate(currentWaveDate.getDate() + 50);
+        index++;
     }
     return list;
   }, [activeProfile.refYear]);
@@ -82,7 +97,7 @@ function App() {
 
     if (currentBlockIndex === -1) {
       const firstStart = new Date(activeProfile.startDate);
-      if (today < firstStart) return { label: "En attente de reprise", percent: 0, color: "var(--text-muted)" };
+      if (today < firstStart) return { label: "En attente", percent: 0, color: "var(--text-muted)" };
       return { label: "Planning terminé", percent: 100, color: "var(--success)" };
     }
 
@@ -93,24 +108,23 @@ function App() {
     const percent = Math.min(Math.max(Math.round(((today.getTime() - start) / (end - start)) * 100), 0), 100);
 
     let label = "";
-    let color = "";
+    let color = "var(--primary)";
 
     if (currentBlock.type === 'TRAVAIL') {
-      color = "var(--primary)";
-      label = nextBlock?.type === 'CONGE_ANNUEL' ? `Dernière ligne droite !` : `Au Travail (${percent}%)`;
+      label = nextBlock?.type === 'CONGE_ANNUEL' ? `Dernière ligne droite` : `Au Travail`;
     } 
     else if (currentBlock.type === 'PERMISSION') {
-      color = "var(--success)";
-      label = `En Repos (${percent}%)`;
+      color = "#10b981";
+      label = `En Repos`;
     }
     else if (currentBlock.type === 'CONGE_ANNUEL') {
-      color = "var(--secondary)";
-      label = `🏖️ Vacances (${percent}%)`;
+      color = "#FF6700";
+      label = `Vacances`;
     }
     return { label, percent, color };
   }, [timeline, activeProfile.startDate]);
 
-  // --- LOGIC ---
+  // --- LOGIC HELPERS ---
   const getSeqError = (idx, type) => {
     if (idx === 0) return null;
     const prev = activeProfile.blocks[idx-1];
@@ -125,7 +139,6 @@ function App() {
     return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
   };
 
-  // --- HELPER UI ---
   const [newHoliday, setNewHoliday] = useState({ name: "", date: "" });
   const addHoli = () => {
     if (!newHoliday.name || !newHoliday.date) return;
@@ -143,15 +156,15 @@ function App() {
     if (diff >= 0) updateBlock(id, 'duration', diff);
   };
 
-  // Avatar helper (First letter of name)
+  // Avatar helper
   const getAvatar = (name) => name ? name.charAt(0).toUpperCase() : "?";
 
   return (
     <div className="container">
       
-      {/* HEADER AMÉLIORÉ */}
+      {/* HEADER MI HOME STYLE */}
       <header className="main-header">
-        <h1 className="app-title-main">PermiPlan <span className="version-tag">v2.3</span></h1>
+        <h1 className="app-title-main">Mi Planning <span className="version-tag">v2.0</span></h1>
         
         <div className="profile-bar">
            <div className="avatar-circle">{getAvatar(activeProfile.name)}</div>
@@ -163,7 +176,7 @@ function App() {
               {data.profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button className="btn-mini" onClick={handleCreateProfile}>+</button>
-            <button className="btn-mini btn-danger-text" onClick={handleDeleteProfile}>Suppr.</button>
+            <button className="btn-mini btn-danger-text" onClick={handleDeleteProfile}>Del</button>
         </div>
 
         {/* PROGRESS BAR */}
@@ -181,8 +194,8 @@ function App() {
         </div>
       </header>
       
-      {/* CONFIG */}
-      <section className="card card-config">
+      {/* CONFIGURATION */}
+      <section className="card">
         <div className="row">
           <div className="col">
             <label>Reprise Travail</label>
@@ -218,12 +231,11 @@ function App() {
           <div className="add-row">
             <input placeholder="Ex: Aïd..." value={newHoliday.name} onChange={e => setNewHoliday({...newHoliday, name: e.target.value})} style={{flex:2}} />
             <input type="date" value={newHoliday.date} onChange={e => setNewHoliday({...newHoliday, date: e.target.value})} style={{flex:1}} />
-            {/* FIXED: Centrage du bouton + */}
             <button className="btn-icon-plus" onClick={addHoli}>+</button>
           </div>
         </div>
 
-        {/* EXPORT / IMPORT (Tailles égales) */}
+        {/* EXPORT / IMPORT EQUALIZED */}
         <div className="backup-row">
           <button className="btn-secondary" onClick={() => exportBackup(data)}>📤 Export</button>
           <label className="btn-secondary">
@@ -263,7 +275,7 @@ function App() {
                   {item.type === 'TRAVAIL' ? '🏭' : item.type === 'CONGE_ANNUEL' ? '🏖️' : '🏠'} {label}
                 </span>
                 
-                {/* NEW X BUTTON */}
+                {/* CENTERED X BUTTON */}
                 <button className="btn-delete-x" onClick={() => updateProfile('blocks', activeProfile.blocks.filter(b => b.id !== item.id))}>
                   ✕
                 </button>
@@ -274,11 +286,12 @@ function App() {
 
               <div className="date-grid">
                 <div className="field">
-                  <label>Du</label>
+                  <label>Du (Fixe)</label>
+                  {/* DISABLED INPUT TRIGGERS GRAY PANEL STYLE */}
                   <input type="date" value={item.computedStart} disabled />
                 </div>
                 <div className="field">
-                  <label>Au</label>
+                  <label>Au (Fin)</label>
                   <input type="date" value={item.computedEnd} onChange={e => updateEnd(item.id, e.target.value, item.computedStart)} />
                 </div>
                 <div className="field small">
