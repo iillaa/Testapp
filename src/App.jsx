@@ -1,230 +1,241 @@
-// src/App.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { calculateTimeline } from './utils/logic';
+import { loadAllData, saveData, createNewProfile, exportBackup } from './utils/storage';
 import './App.css';
 
 function App() {
-  const loadState = (key, def) => {
-    try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
+  // --- GLOBAL STATE ---
+  const [data, setData] = useState(loadAllData);
+  
+  // --- DERIVED STATE (Active Profile) ---
+  const activeProfile = useMemo(() => 
+    data.profiles.find(p => p.id === data.activeId) || data.profiles[0], 
+  [data]);
+
+  // Save whenever data changes
+  useEffect(() => { saveData(data); }, [data]);
+
+  // --- ACTIONS ---
+  const updateProfile = (field, value) => {
+    setData(prev => ({
+      ...prev,
+      profiles: prev.profiles.map(p => p.id === activeProfile.id ? { ...p, [field]: value } : p)
+    }));
   };
 
-  const [startDate, setStartDate] = useState(() => loadState('startDate', new Date().toISOString().split('T')[0]));
-  const [refYear, setRefYear] = useState(() => loadState('refYear', new Date().getFullYear() + 1));
-  const [targetWaveDate, setTargetWaveDate] = useState(() => loadState('targetWaveDate', ""));
-  
-  const [holidays, setHolidays] = useState(() => loadState('holidays', [
-    { id: 1, name: "Aïd el-Fitr", date: "2026-03-20" },
-    { id: 2, name: "Aïd al-Adha", date: "2026-05-27" }
-  ]));
-  
-  const [blocks, setBlocks] = useState(() => loadState('blocks', [
-    { id: 1, type: 'TRAVAIL', duration: 45 },
-    { id: 2, type: 'PERMISSION', duration: 15 },
-    { id: 3, type: 'TRAVAIL', duration: 45 },
-  ]));
+  const handleCreateProfile = () => {
+    const name = prompt("Nom du profil ?");
+    if (!name) return;
+    const newP = createNewProfile(name);
+    setData(prev => ({ ...prev, profiles: [...prev.profiles, newP], activeId: newP.id }));
+  };
 
-  const [newHolidayName, setNewHolidayName] = useState("");
-  const [newHolidayDate, setNewHolidayDate] = useState("");
+  const handleDeleteProfile = () => {
+    if (data.profiles.length <= 1) return alert("Impossible de supprimer le dernier profil.");
+    if (!confirm(`Supprimer ${activeProfile.name} ?`)) return;
+    const newProfiles = data.profiles.filter(p => p.id !== activeProfile.id);
+    setData({ profiles: newProfiles, activeId: newProfiles[0].id });
+  };
 
-  useEffect(() => {
-    localStorage.setItem('startDate', JSON.stringify(startDate));
-    localStorage.setItem('refYear', JSON.stringify(refYear));
-    localStorage.setItem('targetWaveDate', JSON.stringify(targetWaveDate));
-    localStorage.setItem('holidays', JSON.stringify(holidays));
-    localStorage.setItem('blocks', JSON.stringify(blocks));
-  }, [startDate, refYear, targetWaveDate, holidays, blocks]);
+  const handleImport = (e) => {
+    const r = new FileReader();
+    r.onload = (ev) => {
+      try {
+        const d = JSON.parse(ev.target.result);
+        if (d.profiles && d.activeId) {
+          setData(d); // Full restore V2
+        } else if (d.blocks) {
+          // Import V1 backup into current profile
+          updateProfile('blocks', d.blocks);
+          updateProfile('startDate', d.startDate || activeProfile.startDate);
+        }
+        alert("Restauré avec succès !");
+      } catch { alert("Fichier invalide"); }
+    };
+    if (e.target.files[0]) r.readAsText(e.target.files[0]);
+  };
 
+  // --- CALCS ---
   const waves = useMemo(() => {
     const list = [];
-    const startSeason = new Date(`${refYear}-06-01`);
+    const startSeason = new Date(`${activeProfile.refYear}-06-01`);
     for (let i = 0; i < 6; i++) { 
       const d = new Date(startSeason); d.setDate(startSeason.getDate() + (i * 50)); 
       list.push({ id: i + 1, label: `Vague ${i + 1}`, date: d.toISOString().split('T')[0] });
     }
     return list;
-  }, [refYear]);
+  }, [activeProfile.refYear]);
 
+  // Sync Default Wave
   useEffect(() => {
-    if (!targetWaveDate && waves.length > 0) setTargetWaveDate(waves[0].date);
-  }, [waves, targetWaveDate]);
+    if (!activeProfile.targetWaveDate && waves.length > 0) updateProfile('targetWaveDate', waves[0].date);
+  }, [waves, activeProfile.targetWaveDate]);
 
-  const timeline = useMemo(() => calculateTimeline(startDate, blocks, holidays), [startDate, blocks, holidays]);
+  const timeline = useMemo(() => 
+    calculateTimeline(activeProfile.startDate, activeProfile.blocks, activeProfile.holidays), 
+  [activeProfile.startDate, activeProfile.blocks, activeProfile.holidays]);
 
-  const getDynamicLabel = (idx, type) => {
-    if (!blocks[idx]) return "...";
-    let count = 0;
-    for (let i = 0; i <= idx; i++) if (blocks[i].type === 'TRAVAIL') count++;
-    return type === 'CONGE_ANNUEL' ? 'Grand Congé' : type === 'TRAVAIL' ? `Rotation ${count}` : `Repos ${count}`;
+  // --- HELPER UI ---
+  const [newHoliday, setNewHoliday] = useState({ name: "", date: "" });
+  const addHoli = () => {
+    if (!newHoliday.name || !newHoliday.date) return;
+    updateProfile('holidays', [...activeProfile.holidays, { id: Date.now(), ...newHoliday }]);
+    setNewHoliday({ name: "", date: "" });
   };
 
-  const getSeqError = (idx, type) => {
-    if (idx === 0 || !blocks[idx-1]) return null;
-    const prev = blocks[idx-1].type;
-    if (type === 'TRAVAIL' && prev === 'TRAVAIL') return "⚠️ 2 ROTATIONS SUITE";
-    if (type === 'PERMISSION' && prev === 'PERMISSION') return "⚠️ 2 REPOS SUITE";
-    return null;
+  const updateBlock = (id, field, val) => {
+    const n = activeProfile.blocks.map(b => b.id === id ? { ...b, [field]: val } : b);
+    updateProfile('blocks', n);
   };
-
-  const getPos = (h, s, e) => {
-    const r = (new Date(h)-new Date(s))/(new Date(e)-new Date(s));
-    return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
-  };
-
-  const updateDur = (id, val) => setBlocks(blocks.map(b => b.id === id ? { ...b, duration: +val || 0 } : b));
+  
   const updateEnd = (id, end, start) => {
     const diff = Math.round((new Date(end) - new Date(start)) / 86400000);
-    if (diff >= 0) updateDur(id, diff); else alert("Date invalide");
-  };
-  const addStd = () => setBlocks([...blocks, {id: Date.now(), type:'TRAVAIL', duration:45}, {id: Date.now()+1, type:'PERMISSION', duration:15}]);
-  const addConge = () => setBlocks([...blocks, {id: Date.now(), type:'CONGE_ANNUEL', duration:50}]);
-  const remove = (id) => setBlocks(blocks.filter(b => b.id !== id));
-  
-  const addHoli = () => {
-    if(!newHolidayName || !newHolidayDate) return;
-    setHolidays([...holidays, {id:Date.now(), name:newHolidayName, date:newHolidayDate}]);
-    setNewHolidayName(""); setNewHolidayDate("");
-  };
-
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify({startDate, refYear, targetWaveDate, holidays, blocks},null,2)], {type:"application/json"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
-  };
-  const importData = (e) => {
-    const r = new FileReader();
-    r.onload = (ev) => {
-      try {
-        const d = JSON.parse(ev.target.result);
-        if(d.blocks) setBlocks(d.blocks);
-        if(d.startDate) setStartDate(d.startDate);
-        if(d.holidays) setHolidays(d.holidays);
-        if(d.refYear) setRefYear(d.refYear);
-        if(d.targetWaveDate) setTargetWaveDate(d.targetWaveDate);
-        alert("Restauré !");
-      } catch { alert("Erreur fichier"); }
-    };
-    if(e.target.files[0]) r.readAsText(e.target.files[0]);
+    if (diff >= 0) updateBlock(id, 'duration', diff);
   };
 
   return (
     <div className="container">
       
-      {/* HEADER : NOM DE L'APP */}
+      {/* HEADER & PROFILES */}
       <header className="app-header">
-        <h1 className="app-title">PermiPlan <span className="app-version">v1.0</span></h1>
+        <div className="header-top">
+          <h1 className="app-title">PermiPlan</h1>
+          <select 
+            className="profile-selector" 
+            value={data.activeId} 
+            onChange={(e) => setData({...data, activeId: +e.target.value})}
+          >
+            {data.profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div className="profile-actions">
+           <button onClick={handleCreateProfile}>+ Nouv.</button>
+           <button onClick={() => {
+             const n = prompt("Nouveau nom ?", activeProfile.name);
+             if(n) updateProfile('name', n);
+           }}>Renommer</button>
+           <button onClick={handleDeleteProfile} className="btn-danger">Suppr.</button>
+        </div>
       </header>
       
-      {/* 1. CONFIGURATION */}
-      <section className="card-params">
-        <h2>Paramètres</h2>
-        <label>Reprise Travail</label>
-        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        
-        <div style={{display:'flex', gap:'10px'}}>
-          <div style={{flex:1}}>
-            <label>Année</label>
-            <select value={refYear} onChange={e => setRefYear(+e.target.value)}>
-              {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+      {/* PARAMETRES */}
+      <section className="card card-params">
+        <div className="row">
+          <div className="col">
+            <label>Reprise</label>
+            <input type="date" value={activeProfile.startDate} onChange={e => updateProfile('startDate', e.target.value)} />
+          </div>
+          <div className="col">
+            <label>Saison</label>
+            <select value={activeProfile.refYear} onChange={e => updateProfile('refYear', +e.target.value)}>
+              {[2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <div style={{flex:1}}>
-            <label>Vague</label>
-            <select value={targetWaveDate} onChange={e => setTargetWaveDate(e.target.value)}>
+        </div>
+
+        <div className="row">
+          <div className="col">
+            <label>Vague Cible</label>
+            <select value={activeProfile.targetWaveDate} onChange={e => updateProfile('targetWaveDate', e.target.value)}>
               {waves.map(w => <option key={w.id} value={w.date}>{w.label}</option>)}
             </select>
           </div>
         </div>
 
-        <div style={{borderTop:'3px solid black', paddingTop:'15px'}}>
-          <label>Fêtes ({holidays.length})</label>
-          <ul style={{padding:0, listStyle:'none', maxHeight:'120px', overflowY:'auto'}}>
-            {holidays.map(h => (
-              <li key={h.id} style={{display:'flex', justifyContent:'space-between', fontWeight:'bold', marginBottom:'8px', borderBottom:'1px dashed black'}}>
-                <span>{h.name} ({h.date})</span>
-                <span onClick={() => setHolidays(holidays.filter(x => x.id !== h.id))} style={{color:'red', cursor:'pointer'}}>✖</span>
-              </li>
+        <div className="holidays-section">
+          <label>Jours Fériés</label>
+          <div className="tags-container">
+            {activeProfile.holidays.map(h => (
+              <span key={h.id} className="tag">
+                {h.name} <small>{h.date.slice(5)}</small>
+                <button onClick={() => updateProfile('holidays', activeProfile.holidays.filter(x => x.id !== h.id))}>×</button>
+              </span>
             ))}
-          </ul>
-          
-          <div className="add-holiday-row">
-            <input placeholder="Nom Fête" value={newHolidayName} onChange={e=>setNewHolidayName(e.target.value)} style={{flex:2, marginBottom:0}} />
-            <input type="date" value={newHolidayDate} onChange={e=>setNewHolidayDate(e.target.value)} style={{flex:1.5, marginBottom:0}} />
-            <button className="btn-add-holiday" onClick={addHoli}>+</button>
+          </div>
+          <div className="add-row">
+            <input placeholder="Fête..." value={newHoliday.name} onChange={e => setNewHoliday({...newHoliday, name: e.target.value})} />
+            <input type="date" value={newHoliday.date} onChange={e => setNewHoliday({...newHoliday, date: e.target.value})} />
+            <button className="btn-icon" onClick={addHoli}>+</button>
           </div>
         </div>
 
-        <div className="backup-zone">
-          <button className="btn-backup" onClick={exportData}>💾 SAUVEGARDER</button>
-          <label className="btn-restore">
-            📂 RESTAURER
-            <input type="file" accept=".json" onChange={importData} style={{display:'none'}} />
+        <div className="backup-row">
+          <button className="btn-secondary" onClick={() => exportBackup(data)}>📤 Sauvegarder</button>
+          <label className="btn-secondary">
+            📥 Restaurer
+            <input type="file" accept=".json" onChange={handleImport} hidden />
           </label>
         </div>
       </section>
 
-      {/* 2. TIMELINE */}
-      <section>
+      {/* TIMELINE */}
+      <section className="timeline-container">
         {timeline.map((item, index) => {
-          const label = getDynamicLabel(index, item.type);
-          const err = getSeqError(index, item.type);
+          // Dynamic Label Logic
+          let count = 0;
+          for(let i=0; i<=index; i++) if(activeProfile.blocks[i].type === 'TRAVAIL') count++;
+          const label = item.type === 'CONGE_ANNUEL' ? 'Grand Congé' : item.type === 'TRAVAIL' ? `Rotation ${count}` : `Repos ${count}`;
           
-          let gapMsg = null;
-          if (item.type === 'CONGE_ANNUEL' && targetWaveDate) {
-            const diff = Math.ceil((new Date(item.computedStart) - new Date(targetWaveDate)) / 86400000);
-            gapMsg = diff === 0 ? "✅ SYNCHRO PARFAITE" : diff > 0 ? `⚠️ RETARD ${diff} J` : `ℹ️ AVANCE ${Math.abs(diff)} J`;
+          // Gap/Warn Logic
+          let msg = null;
+          let colorClass = "";
+          if (item.type === 'CONGE_ANNUEL' && activeProfile.targetWaveDate) {
+            const diff = Math.ceil((new Date(item.computedStart) - new Date(activeProfile.targetWaveDate)) / 86400000);
+            if (diff === 0) { msg = "✅ Parfait"; colorClass="good"; }
+            else if (diff > 0) { msg = `⚠️ Retard +${diff}j`; colorClass="warn"; }
+            else { msg = `ℹ️ Avance ${Math.abs(diff)}j`; colorClass="info"; }
           }
-
-          let permWarn = null;
-          if (item.type === 'PERMISSION' && targetWaveDate) {
-             if (Math.abs((new Date(item.computedStart) - new Date(targetWaveDate)) / 86400000) < 30) permWarn = "⛔ ZONE VAGUE !";
+          if (item.type === 'PERMISSION' && activeProfile.targetWaveDate) {
+             if (Math.abs((new Date(item.computedStart) - new Date(activeProfile.targetWaveDate)) / 86400000) < 30) {
+               msg = "⛔ Risque Vague"; colorClass="danger";
+             }
           }
 
           return (
-            <div key={item.id} className={`timeline-item ${item.type.toLowerCase()}`}>
-              <div className="item-header">
-                <span className="item-title">{item.type === 'TRAVAIL' ? '🏭' : item.type === 'CONGE_ANNUEL' ? '🏖️' : '🏠'} {label}</span>
-                <button className="btn-delete" onClick={() => remove(item.id)}>X</button>
+            <div key={item.id} className={`card timeline-item ${item.type.toLowerCase()}`}>
+              <div className="item-top">
+                <span className="badge">{item.type.charAt(0)}</span>
+                <span className="item-title">{label}</span>
+                <button className="btn-xs" onClick={() => updateProfile('blocks', activeProfile.blocks.filter(b => b.id !== item.id))}>×</button>
               </div>
 
-              {err && <div className="alert" style={{background:'#fee2e2'}}>{err}</div>}
-              {permWarn && <div className="alert" style={{background:'#fee2e2'}}>{permWarn}</div>}
-              {gapMsg && <div className="alert" style={{background:'#dcfce7'}}>{gapMsg}</div>}
+              {msg && <div className={`status-pill ${colorClass}`}>{msg}</div>}
 
-              <div className="smart-dates">
-                <div>
-                  <label>Du</label>
+              <div className="date-grid">
+                <div className="field">
+                  <span>Début</span>
                   <input type="date" value={item.computedStart} disabled />
                 </div>
-                <div>
-                  <label>Au</label>
+                <div className="field">
+                  <span>Fin</span>
                   <input type="date" value={item.computedEnd} onChange={e => updateEnd(item.id, e.target.value, item.computedStart)} />
                 </div>
-                <div>
-                  <label>Jours</label>
-                  <input type="number" value={item.duration} onChange={e => updateDur(item.id, e.target.value)} className="duration-input" />
+                <div className="field small">
+                  <span>Jours</span>
+                  <input type="number" value={item.duration} onChange={e => updateBlock(item.id, 'duration', +e.target.value)} />
                 </div>
               </div>
-
+              
               {item.conflicts.length > 0 && (
-                <div className="alert" style={{borderColor: item.type==='TRAVAIL'?'red':'green'}}>
-                  {item.conflicts.map(c => `${c.name} (${c.date} - ${getPos(c.date, item.computedStart, item.computedEnd)})`).join(', ')}
+                <div className="conflict-box">
+                  {item.conflicts.map(c => <div key={c.id}>🧨 {c.name} ({c.date})</div>)}
                 </div>
               )}
             </div>
           );
         })}
       </section>
-      
-      {/* FOOTER : CRÉDITS */}
-      <footer className="app-footer">
-        Développé par
-        <span className="dev-name">Dr Kibeche Ali Dia Eddine</span>
+
+      {/* FOOTER */}
+      <footer className="footer-credits">
+        PermiPlan v2.0 • Dr Kibeche
       </footer>
 
-      <div className="fab-container">
-        <button className="btn-fab btn-add-rot" onClick={addStd}>+ ROTATION</button>
-        <button className="btn-fab btn-add-conge" onClick={addConge}>+ CONGÉ</button>
+      {/* FABs */}
+      <div className="fab-zone">
+        <button className="fab main" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: Date.now(), type:'TRAVAIL', duration:45}, {id: Date.now()+1, type:'PERMISSION', duration:15}])}>+ Cycle</button>
+        <button className="fab sub" onClick={() => updateProfile('blocks', [...activeProfile.blocks, {id: Date.now(), type:'CONGE_ANNUEL', duration:30}])}>+ Congé</button>
       </div>
-
     </div>
   );
 }

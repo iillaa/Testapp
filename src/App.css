@@ -1,211 +1,168 @@
-/* src/App.css */
 :root {
-  color-scheme: light; /* Force le mode clair */
-
-  /* Palette Néobrutalisme */
-  --bg-color: #f3f4f6;
-  --text-main: #000000;
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --text: #1f2937;
+  --border: #111827;
   
-  --border-thick: 3px solid #000000;
-  --shadow-hard: 5px 5px 0px #000000;
+  --primary: #a78bfa;  /* Soft Purple */
+  --secondary: #fde047; /* Soft Yellow */
+  --accent: #6ee7b7;    /* Soft Green */
+  --danger: #fca5a5;    /* Soft Red */
   
-  /* Couleurs Cartes */
-  --card-param-bg: #ddd6fe; /* Violet Pastel pour les Paramètres */
-  --card-bg: #ffffff;
-
-  /* Couleurs Statuts */
-  --primary: #8b5cf6;  /* Violet */
-  --secondary: #facc15; /* Jaune (Bouton Congé) */
-  --success: #4ade80;   /* Vert (Bouton Fête) */
-  --danger: #ef4444;   /* Rouge */
-  
-  /* Timeline */
-  --work-bg: #bfdbfe;
-  --rest-bg: #bbf7d0;
-  --conge-bg: #fed7aa;
-  
-  /* Read Only */
-  --readonly-bg: #e5e7eb; /* Gris */
+  --radius: 12px;
+  --border-width: 2px;
+  --shadow: 4px 4px 0px var(--border);
 }
 
-* { box-sizing: border-box; }
-
 body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
   margin: 0;
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  padding-bottom: 120px; /* Espace pour les gros boutons du bas */
+  padding-bottom: 100px;
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 15px;
   max-width: 600px;
   margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* CARTE PARAMÈTRES (Colorée) */
-.card-params {
-  background: var(--card-param-bg); /* Couleur ajoutée ici */
-  border: var(--border-thick);
-  box-shadow: var(--shadow-hard);
-  padding: 20px;
-  margin-bottom: 10px;
+/* GENERIC CARD STYLE */
+.card {
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  transition: transform 0.1s;
 }
 
-h2 {
-  margin: 0 0 15px 0;
-  font-weight: 900;
-  text-transform: uppercase;
-  border-bottom: 3px solid #000;
-  padding-bottom: 5px;
-  font-size: 1.4rem;
+/* HEADER */
+.app-header {
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.app-title { font-weight: 900; font-size: 1.5rem; margin: 0; letter-spacing: -0.5px; }
 
-label { 
-  font-weight: 900; 
-  font-size: 0.75rem; 
-  text-transform: uppercase; 
-  margin-bottom: 5px; 
-  display: block; 
+.profile-selector {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: bold;
+  background: #f3f4f6;
 }
+.profile-actions { display: flex; gap: 8px; }
+.profile-actions button {
+  flex: 1; padding: 6px; font-size: 0.8rem;
+  background: #eee; border: 1px solid black; border-radius: 6px;
+}
+.btn-danger { background: var(--danger) !important; }
 
-/* INPUTS */
+/* INPUTS & FORMS */
+label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin-bottom: 4px; }
 input, select {
-  width: 100%; padding: 12px;
-  border: var(--border-thick);
-  background: #fff;
-  font-weight: bold; font-size: 1rem;
-  margin-bottom: 15px;
-  border-radius: 0;
-  color: black;
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-weight: 600;
+  color: var(--text);
 }
 input:focus, select:focus {
-  background: #fffbeb; outline: none; box-shadow: 3px 3px 0 #000;
+  outline: none;
+  border-color: var(--border);
+  background: #fff;
 }
 
-/* INPUT LECTURE SEULE (Grisé) */
-input:disabled {
-  background-color: var(--readonly-bg);
-  color: #6b7280;
-  cursor: not-allowed;
-  border-color: #6b7280; /* Bordure grise aussi */
+.row { display: flex; gap: 12px; margin-bottom: 12px; }
+.col { flex: 1; }
+
+/* TAGS */
+.tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.tag {
+  background: #e0f2fe;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
 }
+.tag button { border: none; background: none; font-weight: 900; cursor: pointer; color: red; }
+
+/* BUTTONS */
+button { cursor: pointer; font-weight: 700; font-family: inherit; }
+.btn-icon { width: 44px; background: var(--border); color: white; border: none; border-radius: 8px; font-size: 1.2rem; }
+
+.backup-row { display: flex; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
+.btn-secondary {
+  flex: 1; text-align: center; padding: 10px;
+  background: white; border: 2px solid var(--border); border-radius: 8px;
+  font-size: 0.9rem;
+}
+.btn-secondary:active { background: #f3f4f6; transform: translateY(2px); }
 
 /* TIMELINE ITEMS */
-.timeline-item {
-  border: var(--border-thick);
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: var(--shadow-hard);
-  background: white;
-  position: relative;
+.timeline-item { position: relative; }
+.timeline-item.travail { background: #eff6ff; border-color: #1e3a8a; } /* Soft Blue */
+.timeline-item.permission { background: #f0fdf4; border-color: #14532d; } /* Soft Green */
+.timeline-item.conge_annuel { background: #fff7ed; border-color: #9a3412; } /* Soft Orange */
+
+.item-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.badge {
+  background: var(--border); color: white;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.7rem; font-weight: 900;
 }
-.timeline-item.travail { background: var(--work-bg); }
-.timeline-item.permission { background: var(--rest-bg); }
-.timeline-item.conge_annuel { background: var(--conge-bg); }
+.item-title { flex: 1; font-weight: 800; font-size: 1.1rem; }
+.btn-xs { background: transparent; border: none; font-size: 1.5rem; color: #999; }
 
-.item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-.item-title { font-weight: 900; font-size: 1.1rem; }
-
-/* Smart Dates Grid */
-.smart-dates { display: grid; grid-template-columns: 1fr 1fr 70px; gap: 10px; }
-.smart-dates input { margin-bottom: 0; }
-.duration-input { text-align: center; background: rgba(255,255,255,0.5); }
-
-/* ALERTES */
-.alert {
-  margin-top: 10px; padding: 10px; border: 2px solid black; font-weight: 800; font-size: 0.85rem;
-  background: white; display: flex; align-items: center; gap: 10px;
+.status-pill {
+  display: inline-block; padding: 4px 12px; border-radius: 20px;
+  font-size: 0.8rem; font-weight: 700; margin-bottom: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
 }
+.good { background: #bbf7d0; color: #14532d; }
+.warn { background: #fecaca; color: #7f1d1d; }
+.info { background: #bfdbfe; color: #1e3a8a; }
 
-/* BOUTONS */
-button {
-  border: var(--border-thick);
-  font-weight: 900; text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: var(--shadow-hard);
-  transition: all 0.1s;
-}
-button:active { transform: translate(3px, 3px); box-shadow: 0px 0px 0 #000; }
+.date-grid { display: flex; gap: 8px; }
+.date-grid .field { flex: 1; }
+.date-grid .small { flex: 0.4; }
+.date-grid input { background: white; border: 1px solid #ccc; font-size: 0.9rem; padding: 8px; }
+.date-grid input:disabled { background: transparent; border: none; padding-left: 0; color: var(--border); }
 
-.btn-delete { background: #ef4444; color: white; padding: 5px 10px; }
-
-/* Zone Ajout Fête (Alignement) */
-.add-holiday-row { display: flex; gap: 5px; align-items: center; }
-.btn-add-holiday { 
-  background: var(--success); color: black; 
-  padding: 12px; width: 50px; font-size: 1.5rem; 
-  display: flex; justify-content: center; align-items: center;
+.conflict-box {
+  margin-top: 10px; padding: 8px; background: #fff1f2;
+  border-left: 4px solid #f43f5e; color: #881337; font-size: 0.85rem; font-weight: 600;
 }
 
-/* Backup Zone */
-.backup-zone { display: flex; gap: 10px; margin-top: 10px; border-top: 3px solid black; padding-top: 15px; }
-.btn-backup { flex: 1; padding: 12px; background: #374151; color: white; }
-.btn-restore { 
-  flex: 1; padding: 12px; background: #d1d5db; color: black; 
-  border: 3px solid black; box-shadow: 5px 5px 0 black; 
-  text-align: center; font-weight: 900; display: block;
-}
-
-/* FAB (Boutons du bas) */
-.fab-container {
+/* FAB */
+.fab-zone {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 10px; width: 95%; max-width: 580px; z-index: 100;
+  display: flex; gap: 12px; z-index: 99;
 }
-.btn-fab {
-  flex: 1; padding: 18px; font-size: 1rem; border-radius: 0; 
-  box-shadow: 6px 6px 0px black; border: 3px solid black;
-}
-.btn-add-rot { background: var(--primary); color: white; }
-.btn-add-conge { background: var(--secondary); color: black; }
-/* ... (Garde tout le CSS précédent) ... */
-
-/* HEADER (Titre App) */
-.app-header {
-  text-align: center;
-  margin-bottom: 10px;
-  padding: 15px;
-  background: var(--secondary); /* Jaune */
-  border: var(--border-thick);
-  box-shadow: var(--shadow-hard);
-}
-.app-title {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 900;
+.fab {
+  border: 2px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  border-radius: 50px;
+  padding: 12px 24px;
   text-transform: uppercase;
-  letter-spacing: -1px;
-}
-.app-version {
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: black;
-  color: white;
-  padding: 2px 6px;
-  margin-left: 10px;
-  vertical-align: middle;
-}
-
-/* FOOTER (Crédits) */
-.app-footer {
-  text-align: center;
-  margin-top: 20px;
-  padding: 15px;
-  border-top: var(--border-thick);
-  background: #e5e7eb;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #374151;
-}
-.dev-name {
-  display: block;
   font-size: 0.9rem;
-  font-weight: 900;
-  color: black;
-  margin-top: 5px;
 }
+.fab.main { background: var(--primary); color: white; }
+.fab.sub { background: var(--secondary); color: var(--border); }
+.fab:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+
+.footer-credits { text-align: center; color: #9ca3af; font-size: 0.8rem; font-weight: 600; margin-top: 20px; }
