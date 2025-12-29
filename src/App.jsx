@@ -5,8 +5,14 @@ import './App.css';
 
 // Helpers moved outside to prevent re-declaration
 const getAvatar = (name) => name ? name.charAt(0).toUpperCase() : "?";
+
 const getPos = (h, s, e) => {
-  const r = (new Date(h) - new Date(s)) / (new Date(e) - new Date(s));
+  // CORRECTION: 'e' is inclusive. Total duration is (e - s) + 1 day (86400000ms)
+  const totalDuration = (new Date(e) - new Date(s)) + 86400000;
+  // Protect against zero duration just in case
+  if (totalDuration <= 0) return "DÉBUT";
+  
+  const r = (new Date(h) - new Date(s)) / totalDuration;
   return r < 0.33 ? "DÉBUT" : r > 0.66 ? "FIN" : "MILIEU";
 };
 
@@ -93,7 +99,8 @@ function App() {
     const currentBlockIndex = timeline.findIndex(item => {
       const s = new Date(item.computedStart);
       const e = new Date(item.computedEnd);
-      return today >= s && today < e;
+      // CORRECTION: <= because 'e' is now inclusive (last day of block)
+      return today >= s && today <= e;
     });
 
     if (currentBlockIndex === -1) {
@@ -105,7 +112,10 @@ function App() {
     const currentBlock = timeline[currentBlockIndex];
     const nextBlock = timeline[currentBlockIndex + 1];
     const start = new Date(currentBlock.computedStart).getTime();
-    const end = new Date(currentBlock.computedEnd).getTime();
+    
+    // CORRECTION: Add 1 day to 'end' for the math (to represent full duration)
+    const end = new Date(currentBlock.computedEnd).getTime() + 86400000;
+    
     const percent = Math.min(Math.max(Math.round(((today.getTime() - start) / (end - start)) * 100), 0), 100);
 
     let label = "";
@@ -147,7 +157,9 @@ function App() {
   
   const updateEnd = (id, end, start) => {
     const diff = Math.round((new Date(end) - new Date(start)) / 86400000);
-    if (diff >= 0) updateBlock(id, 'duration', diff);
+    // CORRECTION: Add +1 because the range is inclusive (Start to End = Duration)
+    // If Start=16, End=16, Diff=0 -> Duration must be 1.
+    if (diff >= 0) updateBlock(id, 'duration', diff + 1);
   };
 
   return (

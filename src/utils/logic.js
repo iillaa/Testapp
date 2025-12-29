@@ -15,7 +15,7 @@ export const addDays = (dateStr, days) => {
 /**
  * Vérifie si des jours fériés tombent dans une période donnée.
  * @param {string} startDate - Début de la période
- * @param {string} endDate - Fin de la période
+ * @param {string} endDate - Fin de la période (Inclusive)
  * @param {Array} holidays - Liste des jours fériés fournis par l'utilisateur
  * @returns {Array} - Liste des conflits trouvés
  */
@@ -42,14 +42,18 @@ export const calculateTimeline = (initialDate, blocks, holidays) => {
 
   return blocks.map((block) => {
     const start = currentDate;
-    // La fin est calculée en ajoutant la durée (ex: Start + 50j)
-    const end = addDays(start, block.duration);
+    
+    // CORRECTION: Fin inclusive (Dernier jour du congé) = Start + Duration - 1 jour
+    const end = addDays(start, block.duration - 1);
 
-    // Détection des conflits avec la liste dynamique des fêtes
+    // Le prochain bloc commence le lendemain du dernier jour de ce bloc
+    const nextStart = addDays(start, block.duration);
+
+    // Détection des conflits avec la fin inclusive
     const conflicts = checkConflicts(start, end, holidays);
 
-    // Le prochain bloc commence là où celui-ci finit
-    currentDate = end;
+    // Mise à jour pour le tour suivant
+    currentDate = nextStart;
 
     return {
       ...block,
